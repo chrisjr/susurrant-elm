@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "summary": "helpful summary of your project, less than 80 characters",
+  "repository": "https://github.com/USER/PROJECT.git",
+  "license": "BSD3",
+  "source-directories": [
+    "."
+  ],
+  "exposed-modules": [],
+  "dependencies": {
+    "circuithub/elm-bootstrap-html": "5.0.1 <= v < 6.0.0",
+    "deadfoxygrandpa/Elm-Test": "1.0.3 <= v < 2.0.0",
+    "elm-lang/core": "1.1.1 <= v < 2.0.0",
+    "evancz/elm-html": "1.0.0 <= v < 2.0.0",  
+    "seliopou/elm-d3": "1.0.0 <= v < 2.0.0"
+  }
+}
