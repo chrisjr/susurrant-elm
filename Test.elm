@@ -8,21 +8,23 @@ import Debug (crash)
 import List
 import Result
 import Json.Decode
+import Json.Decode (Decoder, dict, array, float)
 import Test.Fixtures (..)
 
 
 import Viz.Stars 
 import TopicData
 
+type Trial = Success | Failure String
 
-isOkBool : Result error value -> Bool
-isOkBool x =
+toTrial : Result String value -> Trial
+toTrial x =
     case x of
-      Ok _ -> True
-      Err _ -> False
+      Ok _ -> Success
+      Err e -> Failure e
 
-isOk : Result error value -> Assertion
-isOk = isOkBool >> assert
+isOk : Result String value -> Assertion
+isOk = toTrial >> assertEqual Success
 
 unsafeGetOk : Result error value -> value
 unsafeGetOk x =
@@ -40,7 +42,7 @@ starTests = [ radialResult `equals` Viz.Stars.lineRadial radialPoints ]
 
 -- TopicData
 
-assertDec : Json.Decode.Decoder a -> String -> Assertion
+assertDec : Decoder a -> String -> Assertion
 assertDec dec s = Json.Decode.decodeString dec s |> isOk
 
 assertTopicDist : String -> Assertion
@@ -51,10 +53,10 @@ jsonTests =
     [ test "topic_tokens" (assertDec TopicData.topicTokenDec topic_tokens_json)
     , test "doc_topics" (assertTopicDist doc_topics_json)
     , test "token_topics" (assertTopicDist token_topics_json)
-    , test "doc_metadata" (assertDec
-                           (Json.Decode.dict TopicData.trackInfoDec)
-                           doc_metadata_json)
+    , test "doc_metadata" (assertDec (dict TopicData.trackInfoDec)
+                                     doc_metadata_json)
     , test "token_topics" (assertTopicDist token_topics_json)
+    , test "vocab" (assertDec (dict (array float)) vocab_json)
     ]
 
 topicFixtureData : Result String TopicData.Data
