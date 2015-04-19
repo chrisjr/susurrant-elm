@@ -6,9 +6,10 @@ import ElmTest.Runner.Element (runDisplay)
 
 import Debug (crash)
 import List
-
-import Test.Fixtures (..)
+import Result
 import Json.Decode
+import Test.Fixtures (..)
+
 
 import Viz.Stars 
 import TopicData
@@ -50,25 +51,27 @@ jsonTests =
     [ test "topic_tokens" (assertDec TopicData.topicTokenDec topic_tokens_json)
     , test "doc_topics" (assertTopicDist doc_topics_json)
     , test "token_topics" (assertTopicDist token_topics_json)
+    , test "doc_metadata" (assertDec
+                           (Json.Decode.dict TopicData.trackInfoDec)
+                           doc_metadata_json)
+    , test "token_topics" (assertTopicDist token_topics_json)
     ]
 
 getTopicFixtureData : Result String TopicData.Data
-getTopicFixtureData =
-    fromResults <| List.map Ok [ topics_json
-                               , doc_topics_json
-                               , token_topics_json
-                               , topic_tokens_json
-                               , doc_metadata_json
-                               ]
+getTopicFixtureData = TopicData.fromResults <|
+    List.map Ok [ topics_json
+                , doc_topics_json
+                , token_topics_json
+                , topic_tokens_json
+                , doc_metadata_json
+                ]
 
 topWordsTest : Test
 topWordsTest =
-    let topicTokens = Json.Decode.decodeString TopicData.topicTokenDec topic_tokens_json
-        topicTokens' = unsafeGetOk topicTokens
-        emptyData = TopicData.emptyData
-        data = { emptyData | topicTokens <- topicTokens' }
-        topWords = TopicData.topWordsForTopic 0 data
-    in test "topWordsForTopic" (assertEqual (List.length topWords) 10)
+    let data = getTopicFixtureData
+        topWords = Result.map (TopicData.topWordsForTopic 0) data
+        lenTopWords = Result.map List.length topWords
+    in test "topWordsForTopic" (assertEqual (Ok 10) lenTopWords)
 
 topicDataTests : List Test
 topicDataTests = jsonTests ++ [topWordsTest]

@@ -7,10 +7,16 @@ add_json() {
     VAR_NAME=$(basename $JSON_FILE | sed 's/\./_/')
     echo -n $VAR_NAME >> $FIXTURE_FILE
     echo ' = """' >> $FIXTURE_FILE
-    cat $JSON_FILE >> $FIXTURE_FILE
+    if [ $JSON_FILE = "data/doc_metadata.json" ]; then
+        cat $JSON_FILE | jq 'with_entries(.value |= {id, title: .title | gsub("(\\\"|\\\\)";"") , user: {username: .user.username}})' >> $FIXTURE_FILE
+    else
+        cat $JSON_FILE >> $FIXTURE_FILE
+    fi
     echo '"""' >> $FIXTURE_FILE
     echo >> $FIXTURE_FILE
 }
+
+
 
 rm -f $FIXTURE_FILE
 
