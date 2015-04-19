@@ -139,8 +139,11 @@ topWordsForTopic topic data =
     let topWords = Dict.get topic (data.topicTokens)
     in List.take 10 (withDefault [] topWords)
 
-getVectors : List (String, Float) -> Data -> List TokenDatum
-getVectors tokens data = crash "undefined"
+getVector : Data -> (String, Float) -> Maybe TokenDatum
+getVector data (token, prob) = Maybe.Nothing
+
+getTokenVectors : Data -> List (String, Float) -> List TokenDatum
+getTokenVectors data tokens = List.filterMap (getVector data) tokens
 
 noInfo : String -> TrackInfo
 noInfo track = { trackID = track, title = "", username = "" }

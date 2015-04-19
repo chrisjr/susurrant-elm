@@ -57,8 +57,8 @@ jsonTests =
     , test "token_topics" (assertTopicDist token_topics_json)
     ]
 
-getTopicFixtureData : Result String TopicData.Data
-getTopicFixtureData = TopicData.fromResults <|
+topicFixtureData : Result String TopicData.Data
+topicFixtureData = TopicData.fromResults <|
     List.map Ok [ topics_json
                 , doc_topics_json
                 , token_topics_json
@@ -66,15 +66,22 @@ getTopicFixtureData = TopicData.fromResults <|
                 , doc_metadata_json
                 ]
 
+getTopWordsFrom = Result.map (TopicData.topWordsForTopic 0)
+
 topWordsTest : Test
 topWordsTest =
-    let data = getTopicFixtureData
-        topWords = Result.map (TopicData.topWordsForTopic 0) data
+    let topWords = getTopWordsFrom topicFixtureData
         lenTopWords = Result.map List.length topWords
     in test "topWordsForTopic" (assertEqual (Ok 10) lenTopWords)
 
+topWordVectorsTest : Test
+topWordVectorsTest =
+    let topWords = getTopWordsFrom topicFixtureData
+        tokens = Result.map2 TopicData.getTokenVectors topicFixtureData topWords
+    in test "getTokenVectors" (assertEqual (Ok 10) (Result.map List.length tokens))
+
 topicDataTests : List Test
-topicDataTests = jsonTests ++ [topWordsTest]
+topicDataTests = jsonTests ++ [topWordsTest, topWordVectorsTest]
 
 suiteVizStars = Suite "Viz.Stars" starTests
 suiteTopicData = Suite "TopicData" topicDataTests
