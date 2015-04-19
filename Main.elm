@@ -2,7 +2,7 @@ import Graphics.Input as Input
 import Html (Html, Attribute, text, div, input, h2)
 import Html.Attributes (..)
 import Html.Events (on, targetValue)
-import Bootstrap.Html (container', row', colXs', glyphiconExclamationSign')
+import Bootstrap.Html (container_, row_, colXs_, glyphiconExclamationSign_)
 import Maybe
 import Maybe (Maybe(..), withDefault, andThen)
 import Signal
@@ -19,7 +19,8 @@ import Viz.Ordinal (cat10)
 import Common (..)
 import TopicData
 import TopicData (topDocsForTopic, numTopics, topicPct, topicOrder,
-                  TrackTokens, trackToTokenTopics)
+                  TrackTokens, trackToTokenTopics, topWordsForTopic,
+                  getTokenVectors)
 
 type Mode
     = Overview
@@ -42,7 +43,7 @@ view : Result String TopicData.Data
 view maybeData maybeTrack state =
     case maybeData of
       Ok data ->
-          container' ([ row' [ colXs' 12 [ showTrack data maybeTrack ] ] ] ++
+          container_ ([ row_ [ colXs_ 12 [ showTrack data maybeTrack ] ] ] ++
                     case state.mode of
                         Overview ->
                             viewOverview data state
@@ -50,7 +51,7 @@ view maybeData maybeTrack state =
                             viewTopic data state topic
                         DocFocus doc -> viewDoc doc data maybeTrack state
                      )
-      Err x -> container' [ row' [ text x ] ]
+      Err x -> container_ [ row_ [ text x ] ]
 
 viewOverview : TopicData.Data -> State -> List Html
 viewOverview data state =
@@ -61,12 +62,12 @@ colorFor i = style [ ("color", cat10 i) ]
 
 viewTopicOverview : TopicData.Data -> State -> Int -> List Html
 viewTopicOverview data state topic =
-    [ row'
-      [ colXs' 3 [ h2 [ colorFor topic ] [ text (toString topic) ] 
+    [ row_
+      [ colXs_ 3 [ h2 [ colorFor topic ] [ text (toString topic) ] 
                  , div [] [ text (topicPct topic data) ]
-                 , smallStar ((topWordsForTopic topic data) |> getWords)
+                 , smallStar ((topWordsForTopic topic data) |> getTokenVectors data)
                  ]
-      , colXs' 9 <| List.map showBar
+      , colXs_ 9 <| List.map showBar
                  <| topDocsForTopic topic data
       ]
     ]
@@ -85,7 +86,7 @@ showTrack data mtd =
 alert : List Html -> Html
 alert xs =
     div [ classList [ ("alert", True), ("alert-danger", True) ] ]
-        (glyphiconExclamationSign' :: xs)
+        (glyphiconExclamationSign_ :: xs)
 
 viewTopic : TopicData.Data -> State -> Int -> List Html
 viewTopic data state topic =
