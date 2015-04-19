@@ -13,6 +13,7 @@ import String
 type alias Datum a number =
     { values : List number
     , id : a
+    , prob : Float
     }
 
 type alias TokenDatum = Datum String Float
@@ -81,7 +82,7 @@ starDisplay margin w h data =
     in display ds margin stars''  data
 
 toData : List (List number) -> List TokenDatum
-toData = List.indexedMap (\i xs -> { values = xs, id = toString i })
+toData = List.indexedMap (\i xs -> { values = xs, id = toString i, prob = 1.0 })
 
 exampleData : List TokenDatum
 exampleData = toData

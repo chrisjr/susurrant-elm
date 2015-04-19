@@ -8,7 +8,7 @@ import Debug (crash)
 import List
 import Result
 import Json.Decode
-import Json.Decode (Decoder, dict, array, float)
+import Json.Decode (Decoder, dict, list, float)
 import Test.Fixtures (..)
 
 
@@ -56,7 +56,7 @@ jsonTests =
     , test "doc_metadata" (assertDec (dict TopicData.trackInfoDec)
                                      doc_metadata_json)
     , test "token_topics" (assertTopicDist token_topics_json)
-    , test "vocab" (assertDec (dict (array float)) vocab_json)
+    , test "vocab" (assertDec (dict (list float)) vocab_json)
     ]
 
 topicFixtureData : Result String TopicData.Data
@@ -66,6 +66,7 @@ topicFixtureData = TopicData.fromResults <|
                 , token_topics_json
                 , topic_tokens_json
                 , doc_metadata_json
+                , vocab_json
                 ]
 
 getTopWordsFrom = Result.map (TopicData.topWordsForTopic 0)

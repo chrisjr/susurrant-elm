@@ -24,6 +24,7 @@ import Json.Decode ( Decoder
                    , string
                    , dict
                    , array
+                   , list
                    , float
                    , at
                    , keyValuePairs)
@@ -36,6 +37,7 @@ type alias Data =
     , tokenTopics : Dict String (Array Float)
     , topicTokens : Dict Int (List (String, Float))
     , docMetadata : Dict String TrackInfo
+    , vocab : Dict String (List Float)
     }
 
 type alias TrackInfo =
@@ -63,7 +65,7 @@ numTopics : Data -> Int
 numTopics = .topicPrevalence >> Array.length
 
 emptyData : Data
-emptyData = Data Array.empty Dict.empty Dict.empty Dict.empty Dict.empty
+emptyData = Data Array.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty
 
 trackInfoDec : Decoder TrackInfo
 trackInfoDec =
@@ -140,7 +142,10 @@ topWordsForTopic topic data =
     in List.take 10 (withDefault [] topWords)
 
 getVector : Data -> (String, Float) -> Maybe TokenDatum
-getVector data (token, prob) = Maybe.Nothing
+getVector data (token, prob) =
+    let vec = Dict.get token (data.vocab)
+        f v = { values = v, id = token, prob = prob }
+    in Maybe.map f vec
 
 getTokenVectors : Data -> List (String, Float) -> List TokenDatum
 getTokenVectors data tokens = List.filterMap (getVector data) tokens
@@ -187,6 +192,7 @@ addDocTopics a data = { data | docTopics <- a }
 addTokenTopics a data = { data | tokenTopics <- a }
 addTopicTokens a data = { data | topicTokens <- a }
 addDocMetadata a data = { data | docMetadata <- a }
+addVocab a data = { data | vocab <- a }
 
 fromResults : List (Result String String) -> Result String Data
 fromResults results =
@@ -196,18 +202,13 @@ fromResults results =
             , updateOrFail addTokenTopics topicDist
             , updateOrFail addTopicTokens topicTokenDec
             , updateOrFail addDocMetadata (dict trackInfoDec)
+            , updateOrFail addVocab (dict (list float))
             ]
         updates' = List.map2 (|>) results updates
     in List.foldl (flip Result.andThen) (Ok emptyData) updates'
 
-fromResponses : Http.Response String 
-    -> Http.Response String
-    -> Http.Response String
-    -> Http.Response String
-    -> Http.Response String
-    -> Result String Data
-fromResponses a b c d e =
-    let lst = [a, b, c, d, e]
+fromResponses a b c d e f =
+    let lst = [a, b, c, d, e, f]
         lst' = List.map responseResult lst
     in fromResults lst'
 
@@ -224,3 +225,4 @@ loadedData =
                       ~ get "token_topics.json"
                       ~ get "topic_tokens.json"
                       ~ get "doc_metadata.json"
+                      ~ get "vocab.json"
