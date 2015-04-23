@@ -9,6 +9,7 @@ import Viz.Ordinal (..)
 import TopicData (TrackInfo, TrackTopics)
 import Array
 import Array (Array)
+import List
 import Maybe
 import Maybe (Maybe, withDefault)
 import Html
@@ -38,6 +39,9 @@ toData trackTopics =
 events : D3.Event.Stream Datum
 events = D3.Event.stream ()
 
+barHeight : Int
+barHeight = 2
+
 bars : Scales -> D3 TrackTopics Datum
 bars {xS, yS, cS} = 
   selectAll ".bar"
@@ -45,7 +49,7 @@ bars {xS, yS, cS} =
      |- enter <.> append "rect"
         |. str attr "class" "bar"
         |. fun attr "width" (\d _ -> d.y |> convert yS |> toString)
-        |. num attr "height" 15
+        |. num attr "height" barHeight
         |. fun attr "fill" (\d _ -> d.x |> cS)
         |. D3.Event.click events (\e d _ -> d)
      |- update

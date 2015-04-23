@@ -72,8 +72,13 @@ viewTopicOverview data state topic =
       ]
     ]
 
+trackInfo : TopicData.TrackInfo -> Html
+trackInfo inf = text <| inf.title ++ " | " ++ inf.username
+
 showBar : TopicData.TrackTopics -> Html
-showBar trackTopics = barDisplay noMargin 500 15 trackTopics
+showBar trackTopics = div [] [ trackInfo trackTopics.track
+                             , barDisplay noMargin 500 10 trackTopics
+                             ]
 
 showTrack : TopicData.Data -> Maybe TopicData.TrackData -> Html
 showTrack data mtd =
