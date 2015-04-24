@@ -1,26 +1,23 @@
 import Graphics.Input as Input
-import Html (Html, Attribute, text, div, input, h2)
-import Html.Attributes (..)
-import Html.Events (on, targetValue)
-import Bootstrap.Html (container_, row_, colXs_, glyphiconExclamationSign_)
-import Maybe
-import Maybe (Maybe(..), withDefault, andThen)
+import Html exposing (Html, Attribute, text, div, input, h2)
+import Html.Attributes exposing (..)
+import Html.Events exposing (on, targetValue)
+import Bootstrap.Html exposing (container_, row_, colXs_, glyphiconExclamationSign_)
+import Maybe exposing (Maybe(..), withDefault, andThen)
 import Signal
 import String
 import List
 import Dict
-import Array (Array)
-import D3.Event
-import Viz.Bars
-import Viz.Bars (barDisplay)
-import Viz.Stars (smallStar)
-import Viz.Common (noMargin)
-import Viz.Ordinal (cat10)
-import Common (..)
-import TopicData
-import TopicData (topDocsForTopic, numTopics, topicPct, topicOrder,
-                  TrackTokens, trackToTokenTopics, topWordsForTopic,
-                  getTokenVectors)
+import Array exposing (Array)
+import Viz.Bars exposing (barDisplay)
+import Viz.Stars exposing (smallStar)
+import Viz.Common exposing (noMargin)
+import Viz.Ordinal exposing (cat10)
+import Common exposing (..)
+import TopicData exposing
+    (topDocsForTopic, numTopics, topicPct, topicOrder,
+     TrackTokens, trackToTokenTopics, topWordsForTopic,
+     getTokenVectors)
 
 type Mode
     = Overview

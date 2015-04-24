@@ -1,9 +1,8 @@
 module Viz.Ordinal where
 
-import Dict
-import Dict (Dict)
+import Dict exposing (Dict)
 import List
-import Maybe (withDefault)
+import Maybe exposing (withDefault)
 
 type alias ColorScale comparable = Dict comparable String
 
@@ -12,8 +11,7 @@ colorDict xs cs = Dict.fromList <| List.map2 (,) xs cs
 
 color' : ColorScale comparable -> comparable -> String
 color' cDict c =
-    let def = List.head (Dict.values cDict)
-    in Dict.get c cDict |> withDefault def
+    Dict.get c cDict |> withDefault "#000"
 
 category10colors : List String
 category10colors =

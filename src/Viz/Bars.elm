@@ -1,17 +1,13 @@
 module Viz.Bars where
 
-import D3 (..)
-import D3.Scale (..)
-import D3.Event
-import Common (..)
-import Viz.Common (..)
-import Viz.Ordinal (..)
-import TopicData (TrackInfo, TrackTopics)
-import Array
-import Array (Array)
+import Viz.Scale exposing (..)
+import Common exposing (..)
+import Viz.Common exposing (..)
+import Viz.Ordinal exposing (..)
+import TopicData exposing (TrackInfo, TrackTopics)
+import Array exposing (Array)
 import List
-import Maybe
-import Maybe (Maybe, withDefault)
+import Maybe exposing (Maybe, withDefault)
 import Html
 import Text
 

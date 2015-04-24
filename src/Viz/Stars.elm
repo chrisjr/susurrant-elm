@@ -1,27 +1,18 @@
 module Viz.Stars where
 
-import D3 (..)
-import D3.Scale
-import D3.Scale (Scale, convert, linear, domain, range)
-import Viz.Common (..)
-import Viz.Ordinal (cat10)
+import Common exposing (TokenDatum)
+import Viz.Scale exposing (FloatScale, linear)
+import Viz.Common exposing (..)
+import Viz.Ordinal exposing (cat10)
 import Html
-import Color (Color, blue)
+import Color exposing (Color, blue)
 import List
 import String
 
-type alias Datum a number =
-    { values : List number
-    , id : a
-    , prob : Float
-    }
-
-type alias TokenDatum = Datum String Float
-
 type alias Scales =
-    { rS : Scale Float
+    { rS : FloatScale
     , color : Color
-    , opacity : Scale Float
+    , opacity : FloatScale
     }
 
 halfPi = pi * 0.5
@@ -48,6 +39,7 @@ addAngles xs =
         angle = twoPi / toFloat l
     in List.map2 (\a b -> (a, toFloat b * angle)) xs [0 .. (l-1)]
 
+{- 
 stars : Scales -> D3 (List TokenDatum) TokenDatum
 stars {rS, color, opacity} = 
   selectAll ".star"
@@ -69,8 +61,8 @@ stars {rS, color, opacity} =
 getDomain : List TokenDatum -> List number
 getDomain = List.concatMap .values >> extent
 
-defaultOpacity : Float -> Scale Float
-defaultOpacity n = D3.Scale.log 2.0 |> domain [1.0, n] |> range [1, 0]
+defaultOpacity : Float -> FloatScale
+defaultOpacity n = linear
 
 starDisplay : Margins -> Float -> Float -> List TokenDatum -> Html.Html
 starDisplay margin w h data =
@@ -93,3 +85,4 @@ exampleData = toData
 smallStar = starDisplay {top = 4, left = 4, right = 4, bottom = 4} 64 64
 
 main = smallStar exampleData
+-}

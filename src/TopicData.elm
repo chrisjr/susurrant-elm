@@ -1,35 +1,30 @@
 module TopicData where
 
-import Array
-import Array (Array)
-import Debug (crash)
-import Dict
-import Dict (Dict)
+import Array exposing (Array)
+import Debug exposing (crash)
+import Dict exposing (Dict)
 import Http
-import Signal (..)
+import Task exposing (Task, andMap)
+import Signal exposing (..)
 import String
 import Result
-import Maybe
-import Maybe (Maybe, withDefault)
-import List
-import List (sortBy, (::))
-import Set
-import Set (Set)
-import Json.Decode
-import Json.Decode ( Decoder
-                   , (:=)
-                   , decodeString
-                   , object3
-                   , int
-                   , string
-                   , dict
-                   , array
-                   , list
-                   , float
-                   , at
-                   , keyValuePairs)
-import Common (..)
-import Viz.Stars (TokenDatum)
+import Maybe exposing (Maybe, withDefault)
+import List exposing (sortBy, (::))
+import Set exposing (Set)
+import Json.Decode exposing ( Decoder
+                            , (:=)
+                            , decodeString
+                            , object3
+                            , int
+                            , string
+                            , dict
+                            , array
+                            , list
+                            , float
+                            , at
+                            , keyValuePairs)
+import Common exposing (..)
+-- import Viz.Stars exposing (TokenDatum)
 
 type alias Data =
     { topicPrevalence : Array Float
@@ -119,7 +114,6 @@ tokensToTopics data track allTokens =
     in Dict.fromList [ get "gfccs" .gfcc
                      , get "beat_coefs" (withDefault -1 << .beat_coef)
                      , get "chroma" .chroma]
-                      
 
 getTopicsForDoc : Data -> String -> Result String (Array Float)
 getTopicsForDoc data doc =
@@ -156,7 +150,7 @@ noInfo track = { trackID = track, title = "", username = "" }
 segToTrackId : String -> String
 segToTrackId seg =
     let parts = String.split "." seg
-    in List.head parts
+    in withDefault "" <| List.head parts
 
 trackInfo : Data -> String -> TrackInfo
 trackInfo data track =
@@ -172,13 +166,6 @@ topicOrder : Data -> List Int
 topicOrder data =
     let f a = withDefault 0.0 <| Array.get a (data.topicPrevalence)
     in List.reverse <| sortBy f [0.. (numTopics data) - 1]
-
-responseResult : Http.Response String -> Result String String
-responseResult response =
-    case response of
-      Http.Success a -> Ok a
-      Http.Waiting -> Err "Waiting for HTTP response"
-      Http.Failure _ s -> Err s
 
 updateOrFail : (a -> Data -> Data) -> Decoder a -> Result String String -> Data -> Result String Data
 updateOrFail update dec resp data =
@@ -207,22 +194,23 @@ fromResults results =
         updates' = List.map2 (|>) results updates
     in List.foldl (flip Result.andThen) (Ok emptyData) updates'
 
-fromResponses a b c d e f =
-    let lst = [a, b, c, d, e, f]
-        lst' = List.map responseResult lst
-    in fromResults lst'
-
 prefix : String
 prefix = "data/"
 
-get : String -> Signal (Http.Response String)
-get fname = Http.sendGet (constant (prefix ++ fname))
+loadData : Task Http.Error Data
+loadData =
+    Task.map Data (Http.get (array float) "data/topics.json")
+            `andMap` Http.get topicDist "data/doc_topics.json"
+            `andMap` Http.get topicDist "data/token_topics.json"
+            `andMap` Http.get topicTokenDec "data/topic_tokens.json"
+            `andMap` Http.get (dict trackInfoDec) "data/doc_metadata.json"
+            `andMap` Http.get (dict (list float)) "data/vocab.json"
 
-loadedData : Signal (Result String Data)
-loadedData =
-    fromResponses <~ get "topics.json"
-                      ~ get "doc_topics.json"
-                      ~ get "token_topics.json"
-                      ~ get "topic_tokens.json"
-                      ~ get "doc_metadata.json"
-                      ~ get "vocab.json"
+topicData : Signal.Mailbox Data
+topicData = Signal.mailbox emptyData
+
+receivedData : Data -> Task x ()
+receivedData data = Signal.send topicData.address data
+
+port fetchData : Task Http.Error ()
+port fetchData = loadData `Task.andThen` receivedData

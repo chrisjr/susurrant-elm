@@ -1,21 +1,22 @@
 module Viz.Common where
 
-import D3 (..)
-import D3.Scale (..)
+import Common exposing (toList)
 import Mouse
 import Signal
-import Html (Html, fromElement)
-import Array
-import Array (Array)
+import Html exposing (Html, fromElement)
+import Svg exposing (svg, g)
+import Svg.Attributes as S
+import Svg.Lazy as S
+import Array exposing (Array)
 import List
-import Graphics.Element (..)
-import Viz.Ordinal (..)
+import Viz.Scale exposing (FloatScale, linear)
+import Viz.Ordinal exposing (..)
 
 type alias Dimensions = { height : Float, width : Float }
 type alias Margins = { top : Float, left : Float, right : Float, bottom : Float }
 
 type alias Domains = { xDomain : List Float, yDomain: List Float, cDomain : List Int }
-type alias Scales = { xS: Scale Float, yS: Scale Float, cS: Int -> String }
+type alias Scales = { xS: FloatScale, yS: FloatScale, cS: Int -> String }
 
 size   = 500
 margin = { top = 10, left = 10, right = 10, bottom = 10 }
@@ -28,16 +29,20 @@ dims margin w h = { height = h - margin.top - margin.bottom
 
 scales : Domains -> Dimensions -> Scales
 scales {xDomain, yDomain, cDomain} {height, width} =
-    let xS = linear |> domain xDomain |> range [0, height]
-        yS = linear |> domain yDomain |> range [0, width]
+    let xS = { linear | domain <- xDomain, range <- [0, height] }
+        yS = { linear | domain <- yDomain, range <- [0, width] }
         cS = color' (category10 cDomain)
     in { xS = xS, yS = yS, cS = cS }
 
 defaultDomains : Domains
 defaultDomains = { xDomain = [0.0, 1.0], yDomain = [0.0, 1.0], cDomain = [0..9] }
 
+
 extent : List comparable -> List comparable
-extent lst = [List.minimum lst, List.maximum lst]
+extent lst =
+    let min = List.minimum lst
+        max = List.maximum lst
+    in toList min ++ toList max
 
 dataDomains : List Float -> Domains
 dataDomains lst = { xDomain = [0.0, 1.0]
@@ -47,9 +52,10 @@ dataDomains lst = { xDomain = [0.0, 1.0]
 translate : number -> number -> String
 translate x y = "translate(" ++ (toString x) ++ "," ++ (toString y) ++ ")"
 
-svg : Dimensions -> Margins -> D3 a a
-svg ds ms =
-  static "svg"
+{-
+svg_ : Dimensions -> Margins -> Html
+svg_ ds ms =
+  svg [ "
   |. num attr "height" (ds.height + ms.top + ms.bottom)
   |. num attr "width"  (ds.width  + ms.left + ms.right)
   |. static "g"
@@ -68,3 +74,4 @@ display ds ms v data =
     let fullHeight = (ds.height + ms.top + ms.bottom)
         fullWidth = (ds.width  + ms.left + ms.right)
     in  fromElement (render fullWidth fullHeight (vis ds ms v) data)
+-}

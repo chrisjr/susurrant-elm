@@ -1,18 +1,18 @@
 module Test where
 
-import ElmTest.Assertion (..)
-import ElmTest.Test (..)
-import ElmTest.Runner.Element (runDisplay)
+import ElmTest.Assertion exposing (..)
+import ElmTest.Test exposing (..)
+import ElmTest.Runner.Element exposing (runDisplay)
 
-import Debug (crash)
+import Debug exposing (crash)
 import List
 import Result
-import Json.Decode
-import Json.Decode (Decoder, dict, list, float)
-import Test.Fixtures (..)
+import Json.Decode exposing (Decoder, dict, list, float)
+import Test.Fixtures exposing (..)
 
-
-import Viz.Stars 
+import Common exposing (..)
+import Viz.Scale exposing (..)
+import Viz.Stars
 import TopicData
 
 type Trial = Success | Failure String
@@ -32,13 +32,36 @@ unsafeGetOk x =
       Ok v -> v
       Err e -> crash ("Not OK: " ++ toString e) 
 
+-- Viz.Scale
+
+lerpTests : List Test
+lerpTests =
+    [ lerp [0.0, 1.0] 0.5 `equals` 0.5
+    , lerp [-2.0, 5.0] 0.0 `equals` -2.0
+    , lerp [-1.0, 1.0] 0.75 `equals` 0.5 ]
+
+minMax : FloatScale -> Test
+minMax scale =
+    let r1 = Maybe.map (convert scale) (List.head scale.domain)
+        r2 = Maybe.map (convert scale) (List.head <| List.reverse scale.domain)
+    in (toList r1 ++ toList r2) `equals` scale.range
+
+
+suiteVizScale =
+    Suite "Viz.Scale" <|
+          lerpTests ++ [ minMax linear
+                       , minMax { linear | domain <- [-200, 500] }
+                       , minMax { linear | range <- [-5.0, -3.0] }
+                       ]
+
 -- Viz.Stars
 
 radialPoints = [(10, 0), (20, 1), (20, 2), (10, 3)]
 radialResult = "M0,-10L16.82941969615793,-10.806046117362794L18.185948536513635,8.32293673094285L1.4112000805986715,9.899924966004454Z"
 
-starTests : List Test
-starTests = [ radialResult `equals` Viz.Stars.lineRadial radialPoints ]
+suiteVizStars =
+    Suite "Viz.Stars"
+              [ radialResult `equals` Viz.Stars.lineRadial radialPoints ]
 
 -- TopicData
 
@@ -83,13 +106,11 @@ topWordVectorsTest =
         tokens = Result.map2 TopicData.getTokenVectors topicFixtureData topWords
     in test "getTokenVectors" (assertEqual (Ok 10) (Result.map List.length tokens))
 
-topicDataTests : List Test
-topicDataTests = jsonTests ++ [topWordsTest, topWordVectorsTest]
-
-suiteVizStars = Suite "Viz.Stars" starTests
-suiteTopicData = Suite "TopicData" topicDataTests
+suiteTopicData =
+    Suite "TopicData" <| jsonTests ++ [topWordsTest, topWordVectorsTest]
 
 allTests = Suite "App" [ suiteVizStars
+                       , suiteVizScale
                        , suiteTopicData
                        ]
 
