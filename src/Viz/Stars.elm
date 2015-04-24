@@ -60,7 +60,7 @@ getDomain : List TokenDatum -> List number
 getDomain = List.concatMap .values >> extent
 
 defaultOpacity : FloatScale
-defaultOpacity = { logScale | range <- [0.8, 0.0] }
+defaultOpacity = logScale
 
 starDisplay : List Html.Attribute -> Margins -> Float -> Float -> List TokenDatum -> Html.Html
 starDisplay attrs margin w h data =

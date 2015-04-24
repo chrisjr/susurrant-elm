@@ -2,6 +2,7 @@ module Model where
 
 import Array exposing (Array)
 import Dict exposing (Dict)
+import Json.Decode exposing (Decoder)
 
 type alias Model =
     { data : Result String Data

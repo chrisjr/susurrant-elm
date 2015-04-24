@@ -14,6 +14,7 @@ import Viz.Common exposing (noMargin)
 import Viz.Ordinal exposing (cat10)
 import Dict
 import Model exposing (Model, State)
+import Common exposing (roundPct)
 import Updates exposing (actions, toPath)
 
 import TopicData exposing
@@ -87,7 +88,10 @@ viewTopicTokens data topic =
     let f x = div [ style [ ("float", "left"), ("margin", "4px") ] ]
                     [ smallStar [] [x]
                     , br [] []
-                    , text (x.id) ]
+                    , text (x.id)
+                    , div [ class "small" ]
+                          [ text <| roundPct x.prob ]
+                    ]
     in List.map f (topicTokens topic data)
 
 viewTopic : Model.Data -> Model.State -> Int -> List Html

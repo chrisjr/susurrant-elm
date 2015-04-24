@@ -3,6 +3,7 @@ module Common where
 import Array exposing (Array)
 import Maybe exposing (Maybe, withDefault)
 import Result
+import String
 import List
 
 last : Array a -> Maybe a
@@ -27,3 +28,8 @@ argmax = withDefault -1 << List.head << List.reverse << argsort
 
 orElse : Result x a -> a -> a
 orElse res x = withDefault x <| Result.toMaybe res
+
+roundPct : Float -> String
+roundPct x =
+    let pct = toString <| x * 100.0
+    in  String.left 4 pct ++ "%"

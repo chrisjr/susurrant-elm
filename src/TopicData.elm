@@ -15,6 +15,7 @@ import Json.Decode exposing ( Decoder
                             , (:=)
                             , decodeString
                             , object3
+                            , maybe
                             , int
                             , string
                             , dict
@@ -76,6 +77,14 @@ tokensToTagged : TrackTokens -> Array TaggedToken
 tokensToTagged tokens =
     Array.map (\(a, b, c) -> TaggedToken a b c) tokens
 
+trackTokenDec : Decoder TrackToken
+trackTokenDec =
+    Json.Decode.tuple3 (,,) (maybe int) int int
+
+trackDataDec : String -> Decoder TrackData
+trackDataDec trackID =
+    Json.Decode.map (\xs -> (trackID, xs)) (array trackTokenDec)
+
 tokensToTopics : Data -> String -> TrackTokens -> Dict String (Array Int)
 tokensToTopics data track allTokens =
     let getTopic = tokenTopic data
@@ -103,8 +112,10 @@ topDocsForTopic topic data =
 
 topWordsForTopic : Int -> Data -> List (String, Float)
 topWordsForTopic topic data =
-    let topWords = Dict.get topic (data.topicTokens)
-    in List.take 10 (withDefault [] topWords)
+    let topWords = withDefault [] <| Dict.get topic (data.topicTokens)
+        sorted = List.reverse <| List.sortBy snd topWords
+        nonzero = List.filter (\(_, x) -> x > 0.001) sorted
+    in List.take 10 nonzero
 
 getVector : Data -> (String, Float) -> Maybe TokenDatum
 getVector data (token, prob) =
@@ -116,7 +127,10 @@ getTokenVectors : Data -> List (String, Float) -> List TokenDatum
 getTokenVectors data tokens = List.filterMap (getVector data) tokens
 
 topicTokens : Int -> Data -> List TokenDatum
-topicTokens topic data = (topWordsForTopic topic data) |> getTokenVectors data
+topicTokens topic data =
+    (topWordsForTopic topic data)
+        |> getTokenVectors data
+        |> List.filter (\x -> x.prob > 0.0001)
 
 segToTrackId : String -> String
 segToTrackId seg =
@@ -130,8 +144,7 @@ trackInfo data track =
 topicPct : Int -> Data -> String
 topicPct i data =
     let amt = withDefault 0.0 <| Array.get i (data.topicPrevalence)
-        pct = toString <| amt * 100.0
-    in  String.left 4 pct ++ "%"
+    in roundPct amt
 
 topicOrder : Data -> List Int
 topicOrder data =
