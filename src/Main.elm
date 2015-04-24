@@ -9,25 +9,34 @@ import Router exposing (Route, match, (:->))
 import History exposing (setPath, path, back, forward, hash)
 import Array exposing (Array)
 import Common exposing (..)
-import TopicData exposing (topicData)
+import TopicData exposing (topicData, emptyData)
 import Model exposing (..)
+import Updates exposing (actions, toPath)
 import View exposing (viewOverview, viewDoc, viewTopic, wrap)
 
 type RouteResult a
     = Page Html
     | Redirect (Task a ())
 
-toPath : String -> RouteResult a
-toPath x = Redirect <| Signal.send pathChangeMailbox.address (setPath x)
+routeToPath : String -> RouteResult a
+routeToPath x = Redirect <| toPath x
 
-startPage _ _ _ = toPath "/index.html"
+startPage _ _ _ = routeToPath "/index.html"
+
+fromHash : String -> State
+fromHash _ = defaultState
 
 topicRoute path hash model =
-    Page <| text path  -- viewTopic data state topic
+    let topic = (String.toInt <| String.dropLeft 1 path) `orElse` -1
+        data = model.data `orElse` emptyData
+    in Page <| wrap <| viewTopic data (fromHash hash) topic
 trackRoute path hash model =
-    Page <| text path  -- viewDoc doc data maybeTrack state
+    let trackID = String.dropLeft 1 path
+        data = model.data `orElse` emptyData
+        track = model.track
+    in Page <| wrap <| viewDoc trackID data track (fromHash hash)
 displayOverview path hash model =
-    Page <| wrap <| viewOverview model defaultState
+    Page <| wrap <| viewOverview model (fromHash hash)
 
 route = match
     [ "/index.html" :-> displayOverview
@@ -36,13 +45,6 @@ route = match
     ] startPage
 
 -- SIGNALS
-
-pathChangeMailbox : Signal.Mailbox (Task error ())
-pathChangeMailbox = Signal.mailbox (Task.succeed ())
-
-port pathChanges : Signal (Task error ())
-port pathChanges =
-  pathChangeMailbox.signal
 
 -- get data
 trackData : Signal.Mailbox (Maybe Model.TrackData)
@@ -72,5 +74,8 @@ onlyTasks rr =
 
 port tasks : Signal (Task error ())
 port tasks = Signal.filterMap onlyTasks (Task.succeed ()) routed
+
+port runActions : Signal (Task error ())
+port runActions = actions.signal
 
 main = Signal.filterMap onlyHtml (text "") routed

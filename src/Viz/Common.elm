@@ -68,9 +68,9 @@ htmlDims ds ms =
     , H.attribute "width" (ds.width + ms.left + ms.right |> floor |> toString)
     ]
 
-svgWithMargin : Dimensions -> Margins -> List Svg -> Html
-svgWithMargin ds ms xs =
-    svg (htmlDims ds ms)
+svgWithMargin : List Html.Attribute -> Dimensions -> Margins -> List Svg -> Html
+svgWithMargin attrs ds ms xs =
+    svg (attrs ++ htmlDims ds ms)
         [ g [ S.transform (translate ms.left ms.top) ] xs ]
 
 center w h xs = [ g [ S.transform (translate (w / 2.0) (h / 2.0))] xs ]

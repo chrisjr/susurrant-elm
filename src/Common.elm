@@ -2,6 +2,7 @@ module Common where
 
 import Array exposing (Array)
 import Maybe exposing (Maybe, withDefault)
+import Result
 import List
 
 last : Array a -> Maybe a
@@ -23,3 +24,6 @@ argsort arr =
 
 argmax : Array comparable -> Int
 argmax = withDefault -1 << List.head << List.reverse << argsort
+
+orElse : Result x a -> a -> a
+orElse res x = withDefault x <| Result.toMaybe res

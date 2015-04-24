@@ -2,7 +2,7 @@ module View where
 
 import Html exposing (Html, Attribute, text, div, input, table, tbody, tr, td, hr, br, h2)
 import Html.Attributes exposing (..)
-import Html.Events exposing (on, targetValue)
+import Html.Events exposing (onClick)
 import Bootstrap.Html exposing ( container_
                                , row_
                                , colXs_
@@ -14,6 +14,7 @@ import Viz.Common exposing (noMargin)
 import Viz.Ordinal exposing (cat10)
 import Dict
 import Model exposing (Model, State)
+import Updates exposing (actions, toPath)
 
 import TopicData exposing
     (topDocsForTopic, numTopics, topicPct, topicOrder,
@@ -39,7 +40,8 @@ viewTopicOverview data state topic =
     [ row_
       [ colXs_ 3 [ h2 [ colorFor topic ] [ text (toString topic) ] 
                  , div [] [ text (topicPct topic data) ]
-                 , mediumStar ((topWordsForTopic topic data) |> getTokenVectors data)
+                 , mediumStar [ onClick actions.address (toPath ("/topic/" ++ toString topic)) ] 
+                              ((topWordsForTopic topic data) |> getTokenVectors data)
                  ]
       , colXs_ 9 [ table [ class "table table-condensed" ]
                          [ tbody [] (List.map showBar (topDocsForTopic topic data)) ]
@@ -58,12 +60,14 @@ barStyle = style []
 -}
 showBar : Model.TrackTopics -> Html
 showBar trackTopics =
-    tr [ barStyle ]
-           [ td [] [ trackInfo trackTopics.track
-                   , br [] []
-                   , barDisplay noMargin 500 5 trackTopics
-                   ] 
-           ]
+    let trackID = trackTopics.track.trackID
+    in tr [ barStyle, onClick actions.address (toPath ("/track/" ++ trackID)) ]
+          [ td [] [ trackInfo trackTopics.track
+                  , br [] []
+                  , barDisplay [] 
+                               noMargin 500 5 trackTopics
+                  ] 
+          ]
 
 showTrack : Model.Data -> Maybe Model.TrackData -> Html
 showTrack data mtd =
@@ -78,11 +82,11 @@ alert xs =
     div [ classList [ ("alert", True), ("alert-danger", True) ] ]
         (glyphiconExclamationSign_ :: xs)
 
-viewTopic : Model.Data -> State -> Int -> List Html
+viewTopic : Model.Data -> Model.State -> Int -> List Html
 viewTopic data state topic =
     (viewTopicOverview data state topic) ++ [ alert [] ]
 
-viewDoc : String -> Model.Data -> Maybe Model.TrackData -> State -> List Html
+viewDoc : String -> Model.Data -> Maybe Model.TrackData -> Model.State -> List Html
 viewDoc doc data maybeTrack state = [
     case maybeTrack of
       Just (trackId, trackData) ->

@@ -62,17 +62,17 @@ getDomain = List.concatMap .values >> extent
 defaultOpacity : FloatScale
 defaultOpacity = { logScale | range <- [0.8, 0.0] }
 
-starDisplay : Margins -> Float -> Float -> List TokenDatum -> Html.Html
-starDisplay margin w h data =
+starDisplay : List Html.Attribute -> Margins -> Float -> Float -> List TokenDatum -> Html.Html
+starDisplay attrs margin w h data =
     let dataDomain = getDomain data
         rS = { linear | domain <- dataDomain, range <- [0, w / 2.0] }
         ds = dims margin w h
         stars' = stars {rS = rS, color = blue, opacity = defaultOpacity}
-    in svgWithMargin ds margin (center w h (stars' data))
+    in svgWithMargin attrs ds margin (center w h (stars' data))
 
-smallStar = starDisplay {top = 4, left = 4, right = 4, bottom = 4} 64 64
+smallStar attrs = starDisplay attrs {top = 4, left = 4, right = 4, bottom = 4} 64 64
 
-mediumStar = starDisplay {top = 4, left = 4, right = 4, bottom = 4} 150 150
+mediumStar attrs = starDisplay attrs {top = 4, left = 4, right = 4, bottom = 4} 150 150
 
 toData : List (List number) -> List TokenDatum
 toData = List.indexedMap (\i xs -> { values = xs, id = toString i, prob = 1.0 })
@@ -83,4 +83,4 @@ exampleData = toData
     , [2, 3, 5, 0, 1, 2]
     ]
 
-main = smallStar exampleData
+main = smallStar [] exampleData

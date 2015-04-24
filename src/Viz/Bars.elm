@@ -44,17 +44,17 @@ bars {xS, yS, cS} data =
                      ] []
     in Array.toList <| Array.map bar data
 
-barDisplay : Margins -> Float -> Float -> TrackTopics -> Html.Html
-barDisplay margin w h data =
+barDisplay : List Html.Attribute -> Margins -> Float -> Float -> TrackTopics -> Html.Html
+barDisplay attrs margin w h data =
     let domains = dataDomains (Array.toList <| Array.map (.y) data.topics)
         ds = dims margin w h
         data' = toData data
-    in svgWithMargin ds margin (bars (scales domains ds) data')
+    in svgWithMargin attrs ds margin (bars (scales domains ds) data')
 
 exampleData =
     let f xs = { track = noInfo "", topics = mkTopics (Array.fromList xs) }
         mkTopics xs = Array.indexedMap (\i x -> {x=i, y=x}) xs
     in f [0..9]
 
-main = barDisplay noMargin 300 5 exampleData
+main = barDisplay [] noMargin 300 5 exampleData
 -- Html.fromElement (Text.asText (toData data))
