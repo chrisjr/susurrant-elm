@@ -33,8 +33,8 @@ dims margin w h = { height = h - margin.top - margin.bottom
 
 scales : Domains -> Dimensions -> Scales
 scales {xDomain, yDomain, cDomain} {height, width} =
-    let xS = { linear | domain <- xDomain, range <- [0, height] }
-        yS = { linear | domain <- yDomain, range <- [0, width] }
+    let xS = { linear | domain <- xDomain, range <- [0, width] }
+        yS = { linear | domain <- yDomain, range <- [0, height] }
         cS = color' (category10 cDomain)
     in { xS = xS, yS = yS, cS = cS }
 
@@ -46,11 +46,6 @@ extent lst =
     let min = List.minimum lst
         max = List.maximum lst
     in toList min ++ toList max
-
-dataDomains : List Float -> Domains
-dataDomains lst = { xDomain = [0.0, 1.0]
-                  , yDomain = [0, List.sum lst] -- extent lst
-                  , cDomain = [0..9] }
 
 translate : number -> number -> String
 translate x y = "translate(" ++ (toString x) ++ "," ++ (toString y) ++ ")"

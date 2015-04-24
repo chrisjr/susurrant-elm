@@ -15,6 +15,8 @@ import Html exposing ( Html
                      , nav
                      , ul
                      , li
+                     , span
+                     , button
                      , h2)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
@@ -26,7 +28,7 @@ import Bootstrap.Html exposing ( container_
                                , navbarDefault'
                                )
 import Maybe exposing (Maybe, withDefault, andThen)
-import Viz.Bars exposing (barDisplay)
+import Viz.Bars exposing (barDisplay, verticalBarDisplay)
 import Viz.Stars exposing (smallStar, mediumStar)
 import Viz.Common exposing (noMargin)
 import Viz.Ordinal exposing (cat10)
@@ -63,14 +65,27 @@ navbrand =
     Html.a [ class "navbar-brand", href "/index.html" ]
             [ text "Susurrant" ]
 
+navheader : Html
+navheader =
+    div [ class "navbar-header" ]
+            [ button [ class "navbar-toggle collapsed"
+                     , attribute "data-toggle" "collapse"
+                     , attribute "data-target" "#collapsed"
+                     ]
+              ([ span [ class "sr-only" ] [ text "Toggle navigation " ] ]
+               ++ List.repeat 3 (span [ class "icon-bar" ] []))
+            , navbrand
+            ]
+
 navbar : String -> Html
 navbar currentPath =
-    nav [ class "navbar navbar-default navbar-fixed-top" ]
-        [ containerFluid_
-          [ ul [ class "nav navbar-nav" ]
-            ( navbrand :: List.map (aLink currentPath) navLinks)
-          ]
-        ]
+    let links = List.map (aLink currentPath) navLinks
+    in nav [ class "navbar navbar-default navbar-fixed-top" ]
+           [ containerFluid_ [ navheader
+                             , div [ class "collapse navbar-collapse", id "collapsed" ]
+                                       [ ul [ class "nav navbar-nav" ] links ]
+                             ]
+           ]
 
 wrap : String -> List Html -> Html
 wrap currentPath xs = container_ <| [ navbar currentPath ] ++ xs
@@ -101,9 +116,7 @@ viewTopicDocOverview data state topic =
                                              ] 
                  , mediumStar (colorFor topic) [] (topicTokens topic data)
                  ]
-      , colXs_ 9 [ table [ class "table table-condensed table-hover tracks" ]
-                         [ tbody [] (List.map showBar (topDocsForTopic topic data)) ]
-                 ]
+      , colXs_ 9 (List.map showBar (topDocsForTopic topic data))
       ]
     , row_ [ hr [] [] ]
     ]
@@ -119,13 +132,13 @@ barStyle = style []
 showBar : Model.TrackTopics -> Html
 showBar trackTopics =
     let trackID = trackTopics.track.trackID
-    in tr [ onClick actions.address (toPath ("/track/" ++ trackID)) ]
-          [ td [] [ trackInfo trackTopics.track
-                  , br [] []
-                  , barDisplay [] 
-                               noMargin 500 10 trackTopics
-                  ] 
+    in div [ class "row track-row"
+           , onClick actions.address (toPath ("/track/" ++ trackID))
+           ]
+          [ colXs_ 9 [ trackInfo trackTopics.track ]
+          , colXs_ 3 [ verticalBarDisplay [] noMargin 100 24 trackTopics ]
           ]
+          
 
 showTrack : Model.Data -> Maybe Model.TrackData -> Html
 showTrack data mtd =
