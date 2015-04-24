@@ -24,37 +24,8 @@ import Json.Decode exposing ( Decoder
                             , at
                             , keyValuePairs)
 import Common exposing (..)
+import Model exposing (..)
 -- import Viz.Stars exposing (TokenDatum)
-
-type alias Data =
-    { topicPrevalence : Array Float
-    , docTopics : Dict String (Array Float)
-    , tokenTopics : Dict String (Array Float)
-    , topicTokens : Dict Int (List (String, Float))
-    , docMetadata : Dict String TrackInfo
-    , vocab : Dict String (List Float)
-    }
-
-type alias TrackInfo =
-    { trackID : String
-    , title : String
-    , username : String
-    }
-
-type alias TrackToken = (Maybe Int, Int, Int)
-
-type alias TaggedToken =
-    { beat_coef : Maybe Int
-    , chroma : Int
-    , gfcc : Int
-    }
-
-type alias TrackTokens = Array TrackToken
-type alias TrackData = (String, TrackTokens)
-type alias TrackTopics =
-    { track : TrackInfo
-    , topics: Array {x: Int, y: Float}
-    }
 
 numTopics : Data -> Int
 numTopics = .topicPrevalence >> Array.length
@@ -195,22 +166,19 @@ fromResults results =
     in List.foldl (flip Result.andThen) (Ok emptyData) updates'
 
 prefix : String
-prefix = "data/"
+prefix = "/data/"
 
 loadData : Task Http.Error Data
 loadData =
-    Task.map Data (Http.get (array float) "data/topics.json")
-            `andMap` Http.get topicDist "data/doc_topics.json"
-            `andMap` Http.get topicDist "data/token_topics.json"
-            `andMap` Http.get topicTokenDec "data/topic_tokens.json"
-            `andMap` Http.get (dict trackInfoDec) "data/doc_metadata.json"
-            `andMap` Http.get (dict (list float)) "data/vocab.json"
+    Task.map Data (Http.get (array float) (prefix ++ "topics.json"))
+            `andMap` Http.get topicDist (prefix ++ "doc_topics.json")
+            `andMap` Http.get topicDist (prefix ++ "token_topics.json")
+            `andMap` Http.get topicTokenDec (prefix ++ "topic_tokens.json")
+            `andMap` Http.get (dict trackInfoDec) (prefix ++ "doc_metadata.json")
+            `andMap` Http.get (dict (list float)) (prefix ++ "vocab.json")
 
-topicData : Signal.Mailbox Data
-topicData = Signal.mailbox emptyData
+topicData : Signal.Mailbox (Result String Data)
+topicData = Signal.mailbox (Err "Loading...")
 
 receivedData : Data -> Task x ()
-receivedData data = Signal.send topicData.address data
-
-port fetchData : Task Http.Error ()
-port fetchData = loadData `Task.andThen` receivedData
+receivedData data = Signal.send topicData.address (Ok data)

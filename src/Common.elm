@@ -4,12 +4,6 @@ import Array exposing (Array)
 import Maybe exposing (Maybe, withDefault)
 import List
 
-type alias TokenDatum =
-    { values : List Float
-    , id : String
-    , prob : Float
-    }
-
 last : Array a -> Maybe a
 last arr = Array.get ((Array.length arr) - 1) arr
 

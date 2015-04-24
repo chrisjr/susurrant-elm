@@ -1,7 +1,7 @@
 module Viz.Stars where
 
-import Common exposing (TokenDatum)
-import Viz.Scale exposing (FloatScale, linear, convert)
+import Model exposing (TokenDatum)
+import Viz.Scale exposing (FloatScale, linear, logScale, convert)
 import Viz.Common exposing (..)
 import Viz.Ordinal exposing (cat10)
 import Html
@@ -49,7 +49,7 @@ star {rS, color, opacity} {id, values, prob} =
                 |> lineRadial
     in path [ S.d pathStr
             , S.fill "none"
-            , S.stroke "#000"
+            , S.stroke (color |> colorStr)
             , S.strokeOpacity (convert opacity prob |> toString)
             ] []
  
@@ -59,18 +59,20 @@ stars scales lst = List.map (star scales) lst
 getDomain : List TokenDatum -> List number
 getDomain = List.concatMap .values >> extent
 
-defaultOpacity : Float -> FloatScale
-defaultOpacity n = linear
+defaultOpacity : FloatScale
+defaultOpacity = { logScale | range <- [0.8, 0.0] }
 
 starDisplay : Margins -> Float -> Float -> List TokenDatum -> Html.Html
 starDisplay margin w h data =
     let dataDomain = getDomain data
         rS = { linear | domain <- dataDomain, range <- [0, w / 2.0] }
         ds = dims margin w h
-        stars' = stars {rS = rS, color = blue, opacity = defaultOpacity 10}
+        stars' = stars {rS = rS, color = blue, opacity = defaultOpacity}
     in svgWithMargin ds margin (center w h (stars' data))
 
 smallStar = starDisplay {top = 4, left = 4, right = 4, bottom = 4} 64 64
+
+mediumStar = starDisplay {top = 4, left = 4, right = 4, bottom = 4} 150 150
 
 toData : List (List number) -> List TokenDatum
 toData = List.indexedMap (\i xs -> { values = xs, id = toString i, prob = 1.0 })

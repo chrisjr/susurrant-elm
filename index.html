@@ -19,19 +19,7 @@
   </head>
   <body>
     <script type="text/javascript">
-      var main = Elm.fullscreen(Elm.Main, {"trackData": null});
-
-      main.ports.requestTrack.subscribe(trackLookup);
-      function trackLookup(trackId) {
-        if (trackId !== null) {
-          console.log(trackId);
-          $.get("data/tracks/" + trackId + ".json", function (data) {
-            main.ports.trackData.send([trackId, data]);
-          });
-        } else {
-          main.ports.trackData.send(null);
-        }
-      }
+      var main = Elm.fullscreen(Elm.Main);
     </script>
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>

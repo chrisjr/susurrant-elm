@@ -1,149 +1,76 @@
-import Graphics.Input as Input
-import Html exposing (Html, Attribute, text, div, input, h2)
-import Html.Attributes exposing (..)
-import Html.Events exposing (on, targetValue)
-import Bootstrap.Html exposing (container_, row_, colXs_, glyphiconExclamationSign_)
-import Maybe exposing (Maybe(..), withDefault, andThen)
+import Html exposing (Html, text)
 import Signal
 import String
 import List
 import Dict
+import Task exposing (Task)
+import Http
+import Router exposing (Route, match, (:->))
+import History exposing (setPath, path, back, forward, hash)
 import Array exposing (Array)
-import Viz.Bars exposing (barDisplay)
-import Viz.Stars exposing (smallStar)
-import Viz.Common exposing (noMargin)
-import Viz.Ordinal exposing (cat10)
 import Common exposing (..)
-import TopicData exposing
-    (topDocsForTopic, numTopics, topicPct, topicOrder,
-     TrackTokens, trackToTokenTopics, topWordsForTopic,
-     getTokenVectors)
+import TopicData exposing (topicData)
+import Model exposing (..)
+import View exposing (viewOverview, viewDoc, viewTopic, wrap)
 
-type Mode
-    = Overview
-    | TopicFocus Int
-    | DocFocus String
+type RouteResult a
+    = Page Html
+    | Redirect (Task a ())
 
-type Action
-    = NoOp
-    | ToOverview
-    | ToTopic Int
-    | ToDoc String
+toPath : String -> RouteResult a
+toPath x = Redirect <| Signal.send pathChangeMailbox.address (setPath x)
 
-type alias State =
-    { mode : Mode }
+startPage _ _ _ = toPath "/index.html"
 
-view : Result String TopicData.Data
-    -> Maybe TopicData.TrackData
-    -> State
-    -> Html
-view maybeData maybeTrack state =
-    case maybeData of
-      Ok data ->
-          container_ ([ row_ [ colXs_ 12 [ showTrack data maybeTrack ] ] ] ++
-                    case state.mode of
-                        Overview ->
-                            viewOverview data state
-                        TopicFocus topic ->
-                            viewTopic data state topic
-                        DocFocus doc -> viewDoc doc data maybeTrack state
-                     )
-      Err x -> container_ [ row_ [ text x ] ]
+topicRoute path hash model =
+    Page <| text path  -- viewTopic data state topic
+trackRoute path hash model =
+    Page <| text path  -- viewDoc doc data maybeTrack state
+displayOverview path hash model =
+    Page <| wrap <| viewOverview model defaultState
 
-viewOverview : TopicData.Data -> State -> List Html
-viewOverview data state =
-    List.concatMap (viewTopicOverview data state) (topicOrder data)
-
-colorFor : Int -> Attribute
-colorFor i = style [ ("color", cat10 i) ]
-
-viewTopicOverview : TopicData.Data -> State -> Int -> List Html
-viewTopicOverview data state topic =
-    [ row_
-      [ colXs_ 3 [ h2 [ colorFor topic ] [ text (toString topic) ] 
-                 , div [] [ text (topicPct topic data) ]
-                 , smallStar ((topWordsForTopic topic data) |> getTokenVectors data)
-                 ]
-      , colXs_ 9 <| List.map showBar
-                 <| topDocsForTopic topic data
-      ]
-    ]
-
-trackInfo : TopicData.TrackInfo -> Html
-trackInfo inf = text <| inf.title ++ " | " ++ inf.username
-
-showBar : TopicData.TrackTopics -> Html
-showBar trackTopics = div [] [ trackInfo trackTopics.track
-                             , barDisplay noMargin 500 10 trackTopics
-                             ]
-
-showTrack : TopicData.Data -> Maybe TopicData.TrackData -> Html
-showTrack data mtd =
-    let trackViz = mtd `andThen` (trackToTokenTopics data >> Just) `andThen`
-                   Dict.get "gfccs" `andThen`
-                   (toString >> text >> Just)
-                   -- (showBar >> Just)
-    in withDefault (text "Display failed") trackViz
-
-alert : List Html -> Html
-alert xs =
-    div [ classList [ ("alert", True), ("alert-danger", True) ] ]
-        (glyphiconExclamationSign_ :: xs)
-
-viewTopic : TopicData.Data -> State -> Int -> List Html
-viewTopic data state topic =
-    (viewTopicOverview data state topic) ++ [ alert [] ]
-
-viewDoc : String -> TopicData.Data -> Maybe TopicData.TrackData -> State -> List Html
-viewDoc doc data maybeTrack state = [
-    case maybeTrack of
-      Just (trackId, trackData) ->
-          if trackId /= doc then alert [ text ("Fetched " ++ trackId ++
-                                               "; doesn't match " ++ "doc" )]
-          else alert []
-      Nothing ->
-          alert [text "Full data for track is missing"]
-    ]
-
+route = match
+    [ "/index.html" :-> displayOverview
+    , "/track" :-> trackRoute
+    , "/topic" :-> topicRoute
+    ] startPage
 
 -- SIGNALS
 
--- main : Signal Html
-main = Signal.map3 view TopicData.loadedData trackData appState
+pathChangeMailbox : Signal.Mailbox (Task error ())
+pathChangeMailbox = Signal.mailbox (Task.succeed ())
 
-handler : Viz.Bars.Datum -> Maybe TopicData.TrackInfo -> Maybe TopicData.TrackInfo
-handler d _ = Just (d.trackInfo)
+port pathChanges : Signal (Task error ())
+port pathChanges =
+  pathChangeMailbox.signal
 
-d3Events : Signal (Maybe TopicData.TrackInfo)
-d3Events = D3.Event.folde handler Nothing Viz.Bars.events
+-- get data
+trackData : Signal.Mailbox (Maybe Model.TrackData)
+trackData = Signal.mailbox Nothing
 
-appState : Signal State
-appState = Signal.foldp step initialState (Signal.subscribe updates)
+port fetchTopicData : Task Http.Error ()
+port fetchTopicData = TopicData.loadData `Task.andThen` TopicData.receivedData
 
-initialState : State
-initialState = { mode = Overview }
+model : Signal Model
+model = Signal.map2 Model topicData.signal trackData.signal
 
-step : Action -> State -> State
-step action oldState = 
-    case action of
-      NoOp       -> oldState
-      ToOverview -> { oldState | mode <- Overview }
-      ToTopic a  -> { oldState | mode <- TopicFocus a }
-      ToDoc a    -> { oldState | mode <- DocFocus a }
+-- Main
+routed : Signal (RouteResult a)
+routed = Signal.map3 route path hash model
 
-updates : Signal.Channel Action
-updates =
-    Signal.channel NoOp
+onlyHtml : RouteResult a -> Maybe Html
+onlyHtml rr =
+    case rr of
+      Page x -> Just x
+      _ -> Nothing
 
-port trackData : Signal (Maybe TopicData.TrackData)
+onlyTasks : RouteResult a -> Maybe (Task a ())
+onlyTasks rr =
+    case rr of
+      Redirect x -> Just x
+      _ -> Nothing
 
-port requestTrack : Signal (Maybe String)
-port requestTrack =
-    Signal.map (Maybe.map (.trackID)) d3Events
-{-
-port requestTrack =
-    let getDocName {mode} = case mode of
-                              DocFocus doc -> Just doc
-                              _ -> Nothing                       
-    in Signal.map getDocName appState
--}
+port tasks : Signal (Task error ())
+port tasks = Signal.filterMap onlyTasks (Task.succeed ()) routed
+
+main = Signal.filterMap onlyHtml (text "") routed

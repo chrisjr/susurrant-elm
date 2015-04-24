@@ -8,8 +8,11 @@ import Html.Attributes as H
 import Svg exposing (Svg, svg, g)
 import Svg.Attributes as S
 import Svg.Lazy as S
+import Json.Encode exposing (string)
 import Array exposing (Array)
 import List
+import String
+import Color exposing (Color, toRgb)
 import Viz.Scale exposing (FloatScale, linear)
 import Viz.Ordinal exposing (..)
 
@@ -38,7 +41,6 @@ scales {xDomain, yDomain, cDomain} {height, width} =
 defaultDomains : Domains
 defaultDomains = { xDomain = [0.0, 1.0], yDomain = [0.0, 1.0], cDomain = [0..9] }
 
-
 extent : List comparable -> List comparable
 extent lst =
     let min = List.minimum lst
@@ -53,11 +55,22 @@ dataDomains lst = { xDomain = [0.0, 1.0]
 translate : number -> number -> String
 translate x y = "translate(" ++ (toString x) ++ "," ++ (toString y) ++ ")"
 
+colorStr : Color -> String
+colorStr c =
+    let {red, green, blue, alpha} = toRgb c
+        rgb = List.map toString [red, green, blue]
+        val = String.join "," <| rgb ++ [toString alpha]
+    in "rgba(" ++ val  ++ ")"
+
+htmlDims : Dimensions -> Margins -> List Html.Attribute
+htmlDims ds ms =
+    [ H.attribute "height" (ds.height + ms.top + ms.bottom |> floor |> toString)
+    , H.attribute "width" (ds.width + ms.left + ms.right |> floor |> toString)
+    ]
+
 svgWithMargin : Dimensions -> Margins -> List Svg -> Html
 svgWithMargin ds ms xs =
-  svg [ H.height (ds.height + ms.top + ms.bottom |> floor)
-      , H.width (ds.width + ms.left + ms.right |> floor)
-      ] [ g [ S.transform (translate ms.left ms.top) ] xs ]
-
+    svg (htmlDims ds ms)
+        [ g [ S.transform (translate ms.left ms.top) ] xs ]
 
 center w h xs = [ g [ S.transform (translate (w / 2.0) (h / 2.0))] xs ]
