@@ -27,23 +27,26 @@ startPage _ _ _ = routeToPath "/index.html"
 fromHash : String -> State
 fromHash _ = defaultState
 
+topicOverviewRoute path hash model = Page <| text "null"
+
 topicRoute path hash model =
     let topic = (String.toInt <| String.dropLeft 1 path) `orElse` -1
         data = model.data `orElse` emptyData
-    in Page <| wrap <| viewTopic data (fromHash hash) topic
+    in Page <| wrap "/topics" <| viewTopic data (fromHash hash) topic
 
 trackRoute path hash model =
     let trackID = String.dropLeft 1 path
         data = model.data `orElse` emptyData
         track = model.track
-    in ActionPage (loadTrack trackID) <| wrap <| viewDoc trackID data track (fromHash hash)
+    in ActionPage (loadTrack trackID) <| wrap "/tracks" <| viewDoc trackID data track (fromHash hash)
 
 displayOverview path hash model =
-    Page <| wrap <| viewOverview model (fromHash hash)
+    Page <| wrap "/index.html" <| viewOverview model (fromHash hash)
 
 route = match
     [ "/index.html" :-> displayOverview
     , "/track" :-> trackRoute
+    , "/topics" :-> topicOverviewRoute
     , "/topic" :-> topicRoute
     ] startPage
 

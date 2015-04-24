@@ -44,18 +44,18 @@ type alias HeaderLink =
     { name : String
     , titleText : String
     , path : String
-    , active : Bool
     }
 
-aLink : HeaderLink -> Html
-aLink {name, titleText, path, active} =
-    li [ classList [ ("active", active) ] ]
+aLink : String -> HeaderLink -> Html
+aLink current {name, titleText, path} =
+    li [ classList [ ("active", current == path) ] ]
        [ Html.a [ onClick actions.address (toPath path), title titleText ] [ text name ] ]
 
 navLinks : List HeaderLink
 navLinks =
-    [ HeaderLink "Overview" "Topic Summaries" "/index.html" False 
-    , HeaderLink "Topic Graph" "Topics in Social Network" "/topics" False
+    [ HeaderLink "Overview" "Topics and Top Tracks" "/index.html" 
+    , HeaderLink "Topics" "All topics at once" "/topics"
+    , HeaderLink "Social Graph" "Topics in social context" "/network"
     ]
 
 navbrand : Html
@@ -63,21 +63,21 @@ navbrand =
     Html.a [ class "navbar-brand", href "/index.html" ]
             [ text "Susurrant" ]
 
-navbar : Html
-navbar =
+navbar : String -> Html
+navbar currentPath =
     nav [ class "navbar navbar-default navbar-fixed-top" ]
         [ containerFluid_
           [ ul [ class "nav navbar-nav" ]
-            ( navbrand :: List.map (aLink) navLinks)
+            ( navbrand :: List.map (aLink currentPath) navLinks)
           ]
         ]
 
-wrap : List Html -> Html
-wrap xs = container_ <| [ navbar ] ++ xs
+wrap : String -> List Html -> Html
+wrap currentPath xs = container_ <| [ navbar currentPath ] ++ xs
 
 viewOverview : Model -> State -> List Html
 viewOverview model state =
-    let f data = List.concatMap (viewTopicOverview data state) (topicOrder data)
+    let f data = List.concatMap (viewTopicDocOverview data state) (topicOrder data)
         output = Result.map f (model.data)
     in case output of
          Ok x -> x
@@ -89,8 +89,8 @@ colorFor i = cat10 i
 colorAttrFor : Int -> Attribute
 colorAttrFor i = style [ ("color", colorFor i) ]
 
-viewTopicOverview : Model.Data -> State -> Int -> List Html
-viewTopicOverview data state topic =
+viewTopicDocOverview : Model.Data -> State -> Int -> List Html
+viewTopicDocOverview data state topic =
     [ row_
       [ div [ onClick actions.address (toPath ("/topic/" ++ toString topic))
             , class "col-xs-3 topic-overview"
@@ -153,7 +153,7 @@ viewTopicTokens data topic =
 
 viewTopic : Model.Data -> Model.State -> Int -> List Html
 viewTopic data state topic =
-    (viewTopicOverview data state topic) ++
+    (viewTopicDocOverview data state topic) ++
         viewTopicTokens data topic ++
         [ br [ style [ ("clear", "both") ] ] []
         , alert [] ]
