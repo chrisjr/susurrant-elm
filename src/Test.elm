@@ -46,7 +46,6 @@ minMax scale =
         r2 = Maybe.map (convert scale) (List.head <| List.reverse scale.domain)
     in (toList r1 ++ toList r2) `equals` scale.range
 
-
 suiteVizScale =
     Suite "Viz.Scale" <|
           lerpTests ++ [ minMax linear

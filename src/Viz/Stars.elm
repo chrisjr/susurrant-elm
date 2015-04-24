@@ -1,10 +1,12 @@
 module Viz.Stars where
 
 import Common exposing (TokenDatum)
-import Viz.Scale exposing (FloatScale, linear)
+import Viz.Scale exposing (FloatScale, linear, convert)
 import Viz.Common exposing (..)
 import Viz.Ordinal exposing (cat10)
 import Html
+import Svg as S exposing (Svg, path)
+import Svg.Attributes as S
 import Color exposing (Color, blue)
 import List
 import String
@@ -39,24 +41,20 @@ addAngles xs =
         angle = twoPi / toFloat l
     in List.map2 (\a b -> (a, toFloat b * angle)) xs [0 .. (l-1)]
 
-{- 
-stars : Scales -> D3 (List TokenDatum) TokenDatum
-stars {rS, color, opacity} = 
-  selectAll ".star"
-  |= identity
-     |- enter <.> append "path"
-        |. str attr "class" "star"
-        |. str attr "fill" "none"
-        |. fun attr "stroke" (\_ i -> cat10 i)
-        |. fun attr "stroke-opacity" (\_ i -> convert opacity (toFloat i+1) |> toString)
---         |. D3.Event.click events (\e d _ -> d)
-     |- update
-        |. fun attr "d" (\d _ -> d.values
-                              |> List.map (convert rS)
-                              |> addAngles
-                              |> lineRadial)
-     |- exit
-        |. remove
+star : Scales -> TokenDatum -> Svg
+star {rS, color, opacity} {id, values, prob} =
+    let pathStr = values
+                |> List.map (convert rS)
+                |> addAngles
+                |> lineRadial
+    in path [ S.d pathStr
+            , S.fill "none"
+            , S.stroke "#000"
+            , S.strokeOpacity (convert opacity prob |> toString)
+            ] []
+ 
+stars : Scales -> List TokenDatum -> List Svg
+stars scales lst = List.map (star scales) lst
 
 getDomain : List TokenDatum -> List number
 getDomain = List.concatMap .values >> extent
@@ -67,11 +65,12 @@ defaultOpacity n = linear
 starDisplay : Margins -> Float -> Float -> List TokenDatum -> Html.Html
 starDisplay margin w h data =
     let dataDomain = getDomain data
-        rS = linear |> domain dataDomain |> range [0, w / 2.0]
+        rS = { linear | domain <- dataDomain, range <- [0, w / 2.0] }
         ds = dims margin w h
         stars' = stars {rS = rS, color = blue, opacity = defaultOpacity 10}
-        stars'' = center w h stars'
-    in display ds margin stars''  data
+    in svgWithMargin ds margin (center w h (stars' data))
+
+smallStar = starDisplay {top = 4, left = 4, right = 4, bottom = 4} 64 64
 
 toData : List (List number) -> List TokenDatum
 toData = List.indexedMap (\i xs -> { values = xs, id = toString i, prob = 1.0 })
@@ -82,7 +81,4 @@ exampleData = toData
     , [2, 3, 5, 0, 1, 2]
     ]
 
-smallStar = starDisplay {top = 4, left = 4, right = 4, bottom = 4} 64 64
-
 main = smallStar exampleData
--}

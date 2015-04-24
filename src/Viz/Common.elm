@@ -3,8 +3,9 @@ module Viz.Common where
 import Common exposing (toList)
 import Mouse
 import Signal
-import Html exposing (Html, fromElement)
-import Svg exposing (svg, g)
+import Html exposing (Html)
+import Html.Attributes as H
+import Svg exposing (Svg, svg, g)
 import Svg.Attributes as S
 import Svg.Lazy as S
 import Array exposing (Array)
@@ -52,26 +53,11 @@ dataDomains lst = { xDomain = [0.0, 1.0]
 translate : number -> number -> String
 translate x y = "translate(" ++ (toString x) ++ "," ++ (toString y) ++ ")"
 
-{-
-svg_ : Dimensions -> Margins -> Html
-svg_ ds ms =
-  svg [ "
-  |. num attr "height" (ds.height + ms.top + ms.bottom)
-  |. num attr "width"  (ds.width  + ms.left + ms.right)
-  |. static "g"
-     |. str attr "transform" (translate ms.left ms.top)
+svgWithMargin : Dimensions -> Margins -> List Svg -> Html
+svgWithMargin ds ms xs =
+  svg [ H.height (ds.height + ms.top + ms.bottom |> floor)
+      , H.width (ds.width + ms.left + ms.right |> floor)
+      ] [ g [ S.transform (translate ms.left ms.top) ] xs ]
 
-vis visDims margin v =
-  svg visDims margin
-  |. v
 
-center w h v =
-  static "g"
-  |. str attr "transform" (translate (w / 2.0) (h / 2.0))
-  |. v
-
-display ds ms v data =
-    let fullHeight = (ds.height + ms.top + ms.bottom)
-        fullWidth = (ds.width  + ms.left + ms.right)
-    in  fromElement (render fullWidth fullHeight (vis ds ms v) data)
--}
+center w h xs = [ g [ S.transform (translate (w / 2.0) (h / 2.0))] xs ]
