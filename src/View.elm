@@ -1,12 +1,30 @@
 module View where
 
-import Html exposing (Html, Attribute, text, div, input, table, tbody, tr, td, hr, br, h2)
+import Html exposing ( Html
+                     , Attribute
+                     , text
+                     , div
+                     , input
+                     , table
+                     , tbody
+                     , tr
+                     , td
+                     , hr
+                     , br
+                     , small
+                     , nav
+                     , ul
+                     , li
+                     , h2)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Bootstrap.Html exposing ( container_
+                               , containerFluid_
                                , row_
                                , colXs_
-                               , glyphiconExclamationSign_)
+                               , glyphiconExclamationSign_
+                               , navbarDefault'
+                               )
 import Maybe exposing (Maybe, withDefault, andThen)
 import Viz.Bars exposing (barDisplay)
 import Viz.Stars exposing (smallStar, mediumStar)
@@ -22,8 +40,40 @@ import TopicData exposing
      trackToTokenTopics, topWordsForTopic,
      getTokenVectors, topicData, topicTokens)
 
+type alias HeaderLink =
+    { name : String
+    , titleText : String
+    , path : String
+    , active : Bool
+    }
+
+aLink : HeaderLink -> Html
+aLink {name, titleText, path, active} =
+    li [ classList [ ("active", active) ] ]
+       [ Html.a [ onClick actions.address (toPath path), title titleText ] [ text name ] ]
+
+navLinks : List HeaderLink
+navLinks =
+    [ HeaderLink "Overview" "Topic Summaries" "/index.html" False 
+    , HeaderLink "Topic Graph" "Topics in Social Network" "/topics" False
+    ]
+
+navbrand : Html
+navbrand =
+    Html.a [ class "navbar-brand", href "/index.html" ]
+            [ text "Susurrant" ]
+
+navbar : Html
+navbar =
+    nav [ class "navbar navbar-default navbar-fixed-top" ]
+        [ containerFluid_
+          [ ul [ class "nav navbar-nav" ]
+            ( navbrand :: List.map (aLink) navLinks)
+          ]
+        ]
+
 wrap : List Html -> Html
-wrap = container_
+wrap xs = container_ <| [ navbar ] ++ xs
 
 viewOverview : Model -> State -> List Html
 viewOverview model state =
@@ -33,18 +83,25 @@ viewOverview model state =
          Ok x -> x
          Err e -> [ text e ]
 
-colorFor : Int -> Attribute
-colorFor i = style [ ("color", cat10 i) ]
+colorFor : Int -> String
+colorFor i = cat10 i
+
+colorAttrFor : Int -> Attribute
+colorAttrFor i = style [ ("color", colorFor i) ]
 
 viewTopicOverview : Model.Data -> State -> Int -> List Html
 viewTopicOverview data state topic =
     [ row_
-      [ colXs_ 3 [ h2 [ colorFor topic ] [ text (toString topic) ] 
-                 , div [] [ text (topicPct topic data) ]
-                 , mediumStar [ onClick actions.address (toPath ("/topic/" ++ toString topic)) ] 
-                              (topicTokens topic data)
+      [ div [ onClick actions.address (toPath ("/topic/" ++ toString topic))
+            , class "col-xs-3 topic-overview"
+            ] 
+                 [ h2 [ colorAttrFor topic ] [ text ("Topic " ++ (toString topic) ++ " ")
+                                             , br [] []
+                                             , small [] [ (text (topicPct topic data)) ]
+                                             ] 
+                 , mediumStar (colorFor topic) [] (topicTokens topic data)
                  ]
-      , colXs_ 9 [ table [ class "table table-condensed" ]
+      , colXs_ 9 [ table [ class "table table-condensed table-hover tracks" ]
                          [ tbody [] (List.map showBar (topDocsForTopic topic data)) ]
                  ]
       ]
@@ -62,11 +119,11 @@ barStyle = style []
 showBar : Model.TrackTopics -> Html
 showBar trackTopics =
     let trackID = trackTopics.track.trackID
-    in tr [ barStyle, onClick actions.address (toPath ("/track/" ++ trackID)) ]
+    in tr [ onClick actions.address (toPath ("/track/" ++ trackID)) ]
           [ td [] [ trackInfo trackTopics.track
                   , br [] []
                   , barDisplay [] 
-                               noMargin 500 5 trackTopics
+                               noMargin 500 10 trackTopics
                   ] 
           ]
 
@@ -86,7 +143,7 @@ alert xs =
 viewTopicTokens : Model.Data -> Int -> List Html
 viewTopicTokens data topic =
     let f x = div [ style [ ("float", "left"), ("margin", "4px") ] ]
-                    [ smallStar [] [x]
+                    [ smallStar (colorFor topic) [] [x]
                     , br [] []
                     , text (x.id)
                     , div [ class "small" ]

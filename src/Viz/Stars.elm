@@ -7,13 +7,13 @@ import Viz.Ordinal exposing (cat10)
 import Html
 import Svg as S exposing (Svg, path)
 import Svg.Attributes as S
-import Color exposing (Color, blue)
+import Color exposing (Color, red, blue, green, gray, yellow)
 import List
 import String
 
 type alias Scales =
     { rS : FloatScale
-    , color : Color
+    , color : String
     , opacity : FloatScale
     }
 
@@ -49,7 +49,7 @@ star {rS, color, opacity} {id, values, prob} =
                 |> lineRadial
     in path [ S.d pathStr
             , S.fill "none"
-            , S.stroke (color |> colorStr)
+            , S.stroke color
             , S.strokeOpacity (convert opacity prob |> toString)
             ] []
  
@@ -60,19 +60,21 @@ getDomain : List TokenDatum -> List number
 getDomain = List.concatMap .values >> extent
 
 defaultOpacity : FloatScale
-defaultOpacity = logScale
+defaultOpacity = { logScale | range <- [0.0, 0.8] }
 
-starDisplay : List Html.Attribute -> Margins -> Float -> Float -> List TokenDatum -> Html.Html
-starDisplay attrs margin w h data =
+starDisplay : String -> List Html.Attribute -> Margins -> Float -> Float -> List TokenDatum -> Html.Html
+starDisplay color attrs margin w h data =
     let dataDomain = getDomain data
         rS = { linear | domain <- dataDomain, range <- [0, w / 2.0] }
         ds = dims margin w h
-        stars' = stars {rS = rS, color = blue, opacity = defaultOpacity}
+        stars' = stars {rS = rS, color = color, opacity = defaultOpacity}
     in svgWithMargin attrs ds margin (center w h (stars' data))
 
-smallStar attrs = starDisplay attrs {top = 4, left = 4, right = 4, bottom = 4} 64 64
+smallStar color attrs =
+    starDisplay color attrs {top = 4, left = 4, right = 4, bottom = 4} 64 64
 
-mediumStar attrs = starDisplay attrs {top = 4, left = 4, right = 4, bottom = 4} 150 150
+mediumStar color attrs =
+    starDisplay color attrs {top = 4, left = 4, right = 4, bottom = 4} 150 150
 
 toData : List (List number) -> List TokenDatum
 toData = List.indexedMap (\i xs -> { values = xs, id = toString i, prob = 1.0 })
@@ -83,4 +85,4 @@ exampleData = toData
     , [2, 3, 5, 0, 1, 2]
     ]
 
-main = smallStar [] exampleData
+main = smallStar "#000" [] exampleData
