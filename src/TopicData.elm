@@ -115,8 +115,8 @@ getVector data (token, prob) =
 getTokenVectors : Data -> List (String, Float) -> List TokenDatum
 getTokenVectors data tokens = List.filterMap (getVector data) tokens
 
-noInfo : String -> TrackInfo
-noInfo track = { trackID = track, title = "", username = "" }
+topicTokens : Int -> Data -> List TokenDatum
+topicTokens topic data = (topWordsForTopic topic data) |> getTokenVectors data
 
 segToTrackId : String -> String
 segToTrackId seg =
