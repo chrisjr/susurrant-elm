@@ -30,7 +30,7 @@ import Bootstrap.Html exposing ( container_
                                )
 import Maybe exposing (Maybe, withDefault, andThen)
 import Viz.Bars exposing (barDisplay, verticalBarDisplay)
-import Viz.Stars exposing (smallStar, mediumStar, getDomain)
+import Viz.Stars exposing (smallStar, mediumStar, getDomain, getTokenDomains)
 import Viz.Common exposing (noMargin)
 import Viz.Ordinal exposing (cat10)
 import Dict
@@ -110,7 +110,8 @@ colorAttrFor i = style [ ("color", colorFor i) ]
 
 viewTopicDocOverview : Model.Data -> State -> Int -> List Html
 viewTopicDocOverview data state topic =
-    let starPlot = mediumStar (colorFor topic) [ attribute "class" "center-block" ] Nothing (topicTokens topic data)
+    let tokenDomains = getTokenDomains data
+        starPlot = mediumStar (colorFor topic) [ attribute "class" "center-block" ] (Just tokenDomains) (topicTokens topic data)
     in [ row_
          [ div [ onClick actions.address (toPath ("/topic/" ++ toString topic))
                , class "col-xs-3 topic-overview"

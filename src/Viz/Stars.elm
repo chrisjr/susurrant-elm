@@ -64,7 +64,7 @@ getTokenDomains : Data -> List Float
 getTokenDomains data = extent <| List.concat <| Dict.values data.vocab
 
 defaultOpacity : FloatScale
-defaultOpacity = { logScale | range <- [0.0, 0.8] }
+defaultOpacity = { logScale | domain <- [0.01, 1.0], range <- [0.0, 0.8] }
 
 starDisplay : String -> List Html.Attribute -> Maybe (List Float) -> Margins -> Float -> Float -> List TokenDatum -> Html.Html
 starDisplay color attrs domain margin w h data =
