@@ -32,8 +32,13 @@
   </head>
   <body>
     <script type="text/javascript">
-      var main = Elm.fullscreen(Elm.Main);
+      var main = Elm.fullscreen(Elm.Main, 
+        {oscConnection: false}
+      );
     </script>
+    <script src="http://127.0.0.1:8081/socket.io/socket.io.js"></script>
+    <script src="osc-bridge.js"></script>
+
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->

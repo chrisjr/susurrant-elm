@@ -13,6 +13,7 @@ import TopicData exposing (topicData, emptyData)
 import Model exposing (..)
 import Updates exposing (actions, toPath)
 import View exposing (viewOverview, viewDoc, viewTopic, wrap)
+import OSC exposing (..)
 
 type RouteResult a
     = Page Html
@@ -24,24 +25,22 @@ routeToPath x = Redirect <| toPath x
 
 startPage _ _ _ = routeToPath "/index.html"
 
-fromHash : String -> State
-fromHash _ = defaultState
+topicOverviewRoute path model state = Page <| text "null"
 
-topicOverviewRoute path hash model = Page <| text "null"
-
-topicRoute path hash model =
+topicRoute path model state =
     let topic = (String.toInt <| String.dropLeft 1 path) `orElse` -1
         data = model.data `orElse` emptyData
-    in Page <| wrap "/topics" <| viewTopic data (fromHash hash) topic
+    in Page <| wrap state <| viewTopic data state topic
 
-trackRoute path hash model =
+trackRoute path model state =
     let trackID = String.dropLeft 1 path
         data = model.data `orElse` emptyData
         track = model.track
-    in ActionPage (loadTrack trackID) <| wrap "/tracks" <| viewDoc trackID data track (fromHash hash)
+    in ActionPage (loadTrack trackID) <| wrap state 
+           <| viewDoc trackID data track state
 
-displayOverview path hash model =
-    Page <| wrap "/index.html" <| viewOverview model (fromHash hash)
+displayOverview path model state =
+    Page <| wrap state <| viewOverview model state
 
 route = match
     [ "/index.html" :-> displayOverview
@@ -68,9 +67,14 @@ loadTrack trackID =
 model : Signal Model
 model = Signal.map2 Model topicData.signal trackData.signal
 
+state : Signal State
+state = 
+    let f x y = { defaultState | oscConnected <- x, currentPath <- y }
+    in Signal.map2 f oscConnection path
+
 -- Main
 -- routed : Signal (RouteResult a)
-routed = Signal.map3 route path hash model
+routed = Signal.map3 route path model state
 
 onlyHtml : RouteResult a -> Maybe Html
 onlyHtml rr =
@@ -91,5 +95,10 @@ port routingTasks = Signal.filterMap onlyTasks (Task.succeed ()) routed
 
 port runActions : Signal (Task error ())
 port runActions = actions.signal
+
+port oscConnection : Signal Bool
+
+port oscOut : Signal (Maybe ExportMessage)
+port oscOut = Signal.map (Maybe.map toOsc) oscOutBox.signal
 
 main = Signal.filterMap onlyHtml (text "") routed

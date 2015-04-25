@@ -2,16 +2,24 @@ module Model where
 
 import Array exposing (Array)
 import Dict exposing (Dict)
+import Debug exposing (crash)
 import Json.Decode exposing (Decoder)
+import String exposing (startsWith)
 
 type alias Model =
     { data : Result String Data
     , track : Maybe TrackData
     }
 
+type TokenType
+    = Gfcc
+    | BeatCoef
+    | Chroma
+
 type alias TokenDatum =
     { values : List Float
     , id : String
+    , tokenType : TokenType
     , prob : Float
     }
 
@@ -52,10 +60,19 @@ type Mode
 
 type alias State = 
     { mode : Mode
+    , currentPath : String
+    , oscConnected : Bool
     }
 
 defaultState : State
-defaultState = { mode = Overview }
+defaultState = { mode = Overview, oscConnected = False, currentPath = "/index.html" }
 
 noInfo : String -> TrackInfo
 noInfo track = { trackID = track, title = "", username = "" }
+
+tokenTypeOf : String -> TokenType
+tokenTypeOf x =
+    if | startsWith "gfcc" x -> Gfcc
+       | startsWith "chroma" x -> Chroma
+       | startsWith "beat_coef" x -> BeatCoef
+       | otherwise -> crash ("Invalid token: " ++ x)

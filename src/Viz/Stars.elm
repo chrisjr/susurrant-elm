@@ -1,6 +1,6 @@
 module Viz.Stars where
 
-import Model exposing (TokenDatum)
+import Model exposing (TokenDatum, TokenType(..), Data)
 import Viz.Scale exposing (FloatScale, linear, logScale, convert)
 import Viz.Common exposing (..)
 import Viz.Ordinal exposing (cat10)
@@ -9,6 +9,7 @@ import Svg as S exposing (Svg, path)
 import Svg.Attributes as S
 import Color exposing (Color, red, blue, green, gray, yellow)
 import List
+import Dict
 import String
 
 type alias Scales =
@@ -27,7 +28,7 @@ lineRadial0 xs =
     in List.map point xs
 
 floatToStr : Float -> String
-floatToStr x = if abs x < 1e-15 then "0" else toString x
+floatToStr x = if abs x < 1e-10 then "0" else toString x
 
 lineRadial : List (number, number) -> String
 lineRadial xs =
@@ -59,25 +60,28 @@ stars scales lst = List.map (star scales) lst
 getDomain : List TokenDatum -> List number
 getDomain = List.concatMap .values >> extent
 
+getTokenDomains : Data -> List Float
+getTokenDomains data = extent <| List.concat <| Dict.values data.vocab
+
 defaultOpacity : FloatScale
 defaultOpacity = { logScale | range <- [0.0, 0.8] }
 
-starDisplay : String -> List Html.Attribute -> Margins -> Float -> Float -> List TokenDatum -> Html.Html
-starDisplay color attrs margin w h data =
-    let dataDomain = getDomain data
-        rS = { linear | domain <- dataDomain, range <- [0, w / 2.0] }
+starDisplay : String -> List Html.Attribute -> Maybe (List Float) -> Margins -> Float -> Float -> List TokenDatum -> Html.Html
+starDisplay color attrs domain margin w h data =
+    let dataDomain = Maybe.withDefault (getDomain data) domain
+        rS = { linear | domain <- dataDomain, range <- [0.0, w / 2.0] }
         ds = dims margin w h
         stars' = stars {rS = rS, color = color, opacity = defaultOpacity}
     in svgWithMargin attrs ds margin (center w h (stars' data))
 
-smallStar color attrs =
-    starDisplay color attrs {top = 4, left = 4, right = 4, bottom = 4} 64 64
+smallStar color attrs domain =
+    starDisplay color attrs domain {top = 4, left = 4, right = 4, bottom = 4} 64 64
 
-mediumStar color attrs =
-    starDisplay color attrs {top = 4, left = 4, right = 4, bottom = 4} 150 150
+mediumStar color attrs domain =
+    starDisplay color attrs Nothing {top = 4, left = 4, right = 4, bottom = 4} 256 256
 
 toData : List (List number) -> List TokenDatum
-toData = List.indexedMap (\i xs -> { values = xs, id = toString i, prob = 1.0 })
+toData = List.indexedMap (\i xs -> { values = xs, id = toString i, tokenType = Gfcc, prob = 1.0 })
 
 exampleData : List TokenDatum
 exampleData = toData
@@ -85,4 +89,4 @@ exampleData = toData
     , [2, 3, 5, 0, 1, 2]
     ]
 
-main = smallStar "#000" [] exampleData
+main = smallStar "#000" [] Nothing exampleData

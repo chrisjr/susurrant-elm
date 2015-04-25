@@ -24,12 +24,13 @@ import Bootstrap.Html exposing ( container_
                                , containerFluid_
                                , row_
                                , colXs_
+                               , glyphiconWarningSign_
                                , glyphiconExclamationSign_
                                , navbarDefault'
                                )
 import Maybe exposing (Maybe, withDefault, andThen)
 import Viz.Bars exposing (barDisplay, verticalBarDisplay)
-import Viz.Stars exposing (smallStar, mediumStar)
+import Viz.Stars exposing (smallStar, mediumStar, getDomain)
 import Viz.Common exposing (noMargin)
 import Viz.Ordinal exposing (cat10)
 import Dict
@@ -87,8 +88,11 @@ navbar currentPath =
                              ]
            ]
 
-wrap : String -> List Html -> Html
-wrap currentPath xs = container_ <| [ navbar currentPath ] ++ xs
+wrap : State -> List Html -> Html
+wrap state xs =
+    let alerts = if (state.oscConnected)
+                 then [] else [ warning [ text "OSC not connected" ] ]
+    in container_ <| [ navbar (state.currentPath) ] ++ alerts ++ xs
 
 viewOverview : Model -> State -> List Html
 viewOverview model state =
@@ -106,29 +110,25 @@ colorAttrFor i = style [ ("color", colorFor i) ]
 
 viewTopicDocOverview : Model.Data -> State -> Int -> List Html
 viewTopicDocOverview data state topic =
-    [ row_
-      [ div [ onClick actions.address (toPath ("/topic/" ++ toString topic))
-            , class "col-xs-3 topic-overview"
-            ] 
-                 [ h2 [ colorAttrFor topic ] [ text ("Topic " ++ (toString topic) ++ " ")
-                                             , br [] []
-                                             , small [] [ (text (topicPct topic data)) ]
-                                             ] 
-                 , mediumStar (colorFor topic) [] (topicTokens topic data)
-                 ]
-      , colXs_ 9 (List.map showBar (topDocsForTopic topic data))
-      ]
-    , row_ [ hr [] [] ]
-    ]
+    let starPlot = mediumStar (colorFor topic) [ attribute "class" "center-block" ] Nothing (topicTokens topic data)
+    in [ row_
+         [ div [ onClick actions.address (toPath ("/topic/" ++ toString topic))
+               , class "col-xs-3 topic-overview"
+               ] 
+           [ h2 [ colorAttrFor topic ] [ text ("Topic " ++ (toString topic) ++ " ")
+                                       , br [] []
+                                       , small [] [ (text (topicPct topic data)) ]
+                                       ] 
+           , starPlot
+           ]
+         , colXs_ 9 (List.map showBar (topDocsForTopic topic data))
+         ]
+       , row_ [ hr [] [] ]
+       ]
 
 trackInfo : Model.TrackInfo -> Html
 trackInfo inf = text <| inf.username ++ " | " ++ inf.title
 
-barStyle = style []
-{-    style [ ("width", "500px")
-          , ("height", "16px")
-          ]
--}
 showBar : Model.TrackTopics -> Html
 showBar trackTopics =
     let trackID = trackTopics.track.trackID
@@ -148,21 +148,32 @@ showTrack data mtd =
                    -- (showBar >> Just)
     in withDefault (text "Display failed") trackViz
 
+
+warning : List Html -> Html
+warning = alertBase False
+
 alert : List Html -> Html
-alert xs =
-    div [ classList [ ("alert", True), ("alert-danger", True) ] ]
-        (glyphiconExclamationSign_ :: xs)
+alert = alertBase True
+
+alertBase b xs =
+    let icon = if b then glyphiconExclamationSign_ else glyphiconWarningSign_
+    in div [ classList [ ("alert", True)
+                       , ("alert-danger", b)
+                       , ("alert-warning", not b) ] ]
+           (icon :: text " " :: xs)
 
 viewTopicTokens : Model.Data -> Int -> List Html
 viewTopicTokens data topic =
-    let f x = div [ style [ ("float", "left"), ("margin", "4px") ] ]
-                    [ smallStar (colorFor topic) [] [x]
+    let tokens = topicTokens topic data
+        tokenDomains = getDomain tokens
+        f x = div [ style [ ("float", "left"), ("margin", "4px") ] ]
+                    [ smallStar (colorFor topic) [] (Just tokenDomains) [x]
                     , br [] []
                     , text (x.id)
                     , div [ class "small" ]
                           [ text <| roundPct x.prob ]
                     ]
-    in List.map f (topicTokens topic data)
+    in List.map f tokens
 
 viewTopic : Model.Data -> Model.State -> Int -> List Html
 viewTopic data state topic =

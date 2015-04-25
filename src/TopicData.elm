@@ -114,13 +114,13 @@ topWordsForTopic : Int -> Data -> List (String, Float)
 topWordsForTopic topic data =
     let topWords = withDefault [] <| Dict.get topic (data.topicTokens)
         sorted = List.reverse <| List.sortBy snd topWords
-        nonzero = List.filter (\(_, x) -> x > 0.001) sorted
+        nonzero = List.filter (\(_, x) -> x > 0.01) sorted
     in List.take 10 nonzero
 
 getVector : Data -> (String, Float) -> Maybe TokenDatum
 getVector data (token, prob) =
     let vec = Dict.get token (data.vocab)
-        f v = { values = v, id = token, prob = prob }
+        f v = { values = v, id = token, prob = prob, tokenType = tokenTypeOf token }
     in Maybe.map f vec
 
 getTokenVectors : Data -> List (String, Float) -> List TokenDatum
@@ -128,9 +128,7 @@ getTokenVectors data tokens = List.filterMap (getVector data) tokens
 
 topicTokens : Int -> Data -> List TokenDatum
 topicTokens topic data =
-    (topWordsForTopic topic data)
-        |> getTokenVectors data
-        |> List.filter (\x -> x.prob > 0.0001)
+    topWordsForTopic topic data |> getTokenVectors data
 
 segToTrackId : String -> String
 segToTrackId seg =
