@@ -27,11 +27,17 @@ Assumes an elm application "main" with ports oscIn and oscOut
     socket.on('disconnect', function() {
         elmApp.ports.oscConnection.send(false);
     });
+    function flatten(xs) {
+        if (xs.length == 0) return xs;
+        return xs.reduce(function(a, b) {
+            return a.concat(b);
+        });
+    }
 
     function oscSend(obj) {
         var address = obj[0],
-            args = obj[1].concat(obj[2]),
-            msg = {"address": address, "arguments": args};
+            args = flatten(flatten(obj[1])),
+            msg = {"address": address, "args": args};
         console.log(msg);
         socket.emit('message', msg);
     }
