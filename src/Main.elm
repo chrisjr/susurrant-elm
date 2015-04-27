@@ -13,7 +13,8 @@ import TopicData exposing (topicData, emptyData)
 import Model exposing (..)
 import Updates exposing (actions, toPath)
 import View exposing (viewOverview, viewDoc, viewTopic, wrap)
-import OSC exposing (..)
+import Audio exposing (playTopic)
+import OSC exposing (toOsc, oscOutBox, ExportMessage)
 
 type RouteResult a
     = Page Html
@@ -30,7 +31,8 @@ topicOverviewRoute path model state = Page <| text "null"
 topicRoute path model state =
     let topic = (String.toInt <| String.dropLeft 1 path) `orElse` -1
         data = model.data `orElse` emptyData
-    in Page <| wrap state <| viewTopic data state topic
+    in ActionPage (playTopic topic data) <| wrap state
+           <| viewTopic data state topic
 
 trackRoute path model state =
     let trackID = String.dropLeft 1 path

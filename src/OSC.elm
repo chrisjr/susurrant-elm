@@ -46,7 +46,7 @@ view connected =
 oscOutBox : Signal.Mailbox (Maybe Message)
 oscOutBox = Signal.mailbox Nothing
 
-{--}
+{--
 port oscConnection : Signal Bool
 
 port oscOut : Signal (Maybe ExportMessage)
