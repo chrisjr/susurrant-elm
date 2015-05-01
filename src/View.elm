@@ -67,7 +67,7 @@ aLink current {name, titleText, path} =
 navLinks : List HeaderLink
 navLinks =
     [ HeaderLink "Overview" "Topics and Top Tracks" "/index.html" 
-    , HeaderLink "Topics" "All topics at once" "/topics"
+--    , HeaderLink "Topics" "All topics at once" "/topics"
     , HeaderLink "Social Graph" "Tracks in social context" "/graph"
     ]
 
