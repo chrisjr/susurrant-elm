@@ -14,7 +14,7 @@ import Set exposing (Set)
 import Json.Decode exposing ( Decoder
                             , (:=)
                             , decodeString
-                            , object3
+                            , object4
                             , maybe
                             , int
                             , string
@@ -36,10 +36,11 @@ emptyData = Data Array.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.em
 
 trackInfoDec : Decoder TrackInfo
 trackInfoDec =
-    object3 (TrackInfo)
+    object4 (TrackInfo)
       (Json.Decode.map toString <| "id" := int)
       ("title" := string)
       (at ["user", "username"] string)          
+      ("permalink" := string)
 
 topicDist : Decoder (Dict String (Array Float))
 topicDist = dict (array float)
@@ -62,7 +63,8 @@ thresh topic min _ arr = (nth topic arr) > min
 
 trackToTokenTopics : Data -> TrackData -> Dict String TrackTopics
 trackToTokenTopics data (track, trackTokens) =
-    let topicDict = tokensToTopics data track trackTokens
+    let byDtype = tokensByDtype data track trackTokens
+        topicDict = tokensToTopics data byDtype
         info = trackInfo data track
         f xs = Array.map (\i -> {x=i, y=1.0/toFloat (Array.length xs)}) xs
     in Dict.map (\_ v -> { track = info, topics = f v}) topicDict
@@ -77,6 +79,34 @@ tokensToTagged : TrackTokens -> Array TaggedToken
 tokensToTagged tokens =
     Array.map (\(a, b, c) -> TaggedToken a b c) tokens
 
+
+incrementOrAdd : comparable -> Dict comparable Int -> Dict comparable Int
+incrementOrAdd x d =
+    let f maybeV =
+            case maybeV of
+              Just v -> Just (v + 1)
+              Nothing -> Just 1
+    in Dict.update x f d
+
+count : List comparable -> Dict comparable Int
+count = List.foldl incrementOrAdd Dict.empty
+
+mkProbList : List comparable -> List (comparable, Float)
+mkProbList xs =
+    let n = List.length xs
+        counts = count xs
+        countLst = Dict.toList counts
+        f (a,b) = (a, toFloat b / toFloat n)
+    in if n == 0 then [] else List.map f countLst
+
+
+tokensToProbDist : String -> Dict String (Array Int) -> List (String, Float)
+tokensToProbDist dtype byDtypes =
+    let tokens = withDefault (Array.empty) <| Dict.get dtype byDtypes
+        tokenStr i = dtype ++ toString i
+        tokenStrs = Array.toList <| Array.map tokenStr tokens
+    in mkProbList tokenStrs
+
 trackTokenDec : Decoder TrackToken
 trackTokenDec =
     Json.Decode.tuple3 (,,) (maybe int) int int
@@ -85,15 +115,16 @@ trackDataDec : String -> Decoder TrackData
 trackDataDec trackID =
     Json.Decode.map (\xs -> (trackID, xs)) (array trackTokenDec)
 
-tokensToTopics : Data -> String -> TrackTokens -> Dict String (Array Int)
-tokensToTopics data track allTokens =
-    let getTopic = tokenTopic data
-        tagged = tokensToTagged allTokens
-        ofType getter = Array.map getter tagged
-        get dtype getter = (dtype, Array.map (getTopic dtype) (ofType getter))
+tokensByDtype : Data -> String -> TrackTokens -> Dict String (Array Int)
+tokensByDtype data track allTokens =
+    let tagged = tokensToTagged allTokens
+        get dtype getter = (dtype, Array.map getter tagged)
     in Dict.fromList [ get "gfccs" .gfcc
                      , get "beat_coefs" (withDefault -1 << .beat_coef)
                      , get "chroma" .chroma]
+
+tokensToTopics : Model.Data -> Dict String (Array Int) -> Dict String (Array Int)
+tokensToTopics data = Dict.map (\dtype xs -> Array.map (tokenTopic data dtype) xs)
 
 getTopicsForDoc : Data -> String -> Result String (Array Float)
 getTopicsForDoc data doc =

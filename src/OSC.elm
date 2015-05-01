@@ -29,6 +29,8 @@ toOsc m = case m of
     StopTokens ->
         ("/tokens/stop", [])
 
+{--
+
 view : Bool -> Html
 view connected =
     div []
@@ -46,7 +48,6 @@ view connected =
 oscOutBox : Signal.Mailbox (Maybe Message)
 oscOutBox = Signal.mailbox Nothing
 
-{--
 port oscConnection : Signal Bool
 
 port oscOut : Signal (Maybe ExportMessage)

@@ -4,6 +4,7 @@ import Array exposing (Array)
 import Dict exposing (Dict)
 import Debug exposing (crash)
 import Json.Decode exposing (Decoder)
+import Set exposing (Set)
 import String exposing (startsWith)
 
 type alias Model =
@@ -15,6 +16,7 @@ type TokenType
     = Gfcc
     | BeatCoef
     | Chroma
+    | Text
 
 type alias TokenDatum =
     { values : List Float
@@ -36,6 +38,7 @@ type alias TrackInfo =
     { trackID : String
     , title : String
     , username : String
+    , url : String
     }
 
 type alias TrackToken = (Maybe Int, Int, Int)
@@ -53,6 +56,15 @@ type alias TrackTopics =
     , topics: Array {x: Int, y: Float}
     }
 
+type alias Node = String
+
+type alias Link = (String, String)
+
+type alias GraphData =
+    { nodes : List Node
+    , links : List Link
+    }
+
 type Mode
     = Overview
     | TopicFocus Int
@@ -62,17 +74,22 @@ type alias State =
     { mode : Mode
     , currentPath : String
     , oscConnected : Bool
+    , playing : Set String
     }
 
 defaultState : State
-defaultState = { mode = Overview, oscConnected = False, currentPath = "/index.html" }
+defaultState = { mode = Overview
+               , oscConnected = False
+               , currentPath = "/index.html"
+               , playing = Set.empty
+               }
 
 noInfo : String -> TrackInfo
-noInfo track = { trackID = track, title = "", username = "" }
+noInfo track = { trackID = track, title = "", username = "", url = "" }
 
 tokenTypeOf : String -> TokenType
 tokenTypeOf x =
     if | startsWith "gfcc" x -> Gfcc
        | startsWith "chroma" x -> Chroma
        | startsWith "beat_coef" x -> BeatCoef
-       | otherwise -> crash ("Invalid token: " ++ x)
+       | otherwise -> Text
