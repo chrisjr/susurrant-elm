@@ -4,8 +4,9 @@
     "repository": "https://github.com/chrisjr/susurrant-elm.git",
     "license": "BSD3",
     "source-directories": [
-        "src"
+        "src", "elm-webaudio"
     ],
+    "native-modules": true,
     "exposed-modules": [],
     "dependencies": {
         "TheSeamau5/elm-history": "1.0.0 <= v < 2.0.0",
