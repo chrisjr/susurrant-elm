@@ -32,7 +32,7 @@ numTopics : Data -> Int
 numTopics = .topicPrevalence >> Array.length
 
 emptyData : Data
-emptyData = Data Array.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty
+emptyData = Data Array.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty
 
 trackInfoDec : Decoder TrackInfo
 trackInfoDec =
@@ -40,7 +40,7 @@ trackInfoDec =
       (Json.Decode.map toString <| "id" := int)
       ("title" := string)
       (at ["user", "username"] string)          
-      ("permalink" := string)
+      ("permalink_url" := string)
 
 topicDist : Decoder (Dict String (Array Float))
 topicDist = dict (array float)
@@ -72,13 +72,11 @@ trackToTokenTopics data (track, trackTokens) =
 tokenTopic : Data -> String -> Int -> Int
 tokenTopic data dtype dnum =
     let tokName = dtype ++ (toString dnum)
-        topic = Dict.get tokName (data.tokenTopics)
-    in withDefault -1 <| Maybe.map argmax topic
+    in withDefault -1 <| Dict.get tokName (data.tokenMaxLikelyTopic)
 
 tokensToTagged : TrackTokens -> Array TaggedToken
 tokensToTagged tokens =
     Array.map (\(a, b, c) -> TaggedToken a b c) tokens
-
 
 incrementOrAdd : comparable -> Dict comparable Int -> Dict comparable Int
 incrementOrAdd x d =
@@ -124,7 +122,8 @@ tokensByDtype data track allTokens =
                      , get "chroma" .chroma]
 
 tokensToTopics : Model.Data -> Dict String (Array Int) -> Dict String (Array Int)
-tokensToTopics data = Dict.map (\dtype xs -> Array.map (tokenTopic data dtype) xs)
+tokensToTopics data =
+    Dict.map (\dtype xs -> Array.map (tokenTopic data dtype) xs)
 
 getTopicsForDoc : Data -> String -> Result String (Array Float)
 getTopicsForDoc data doc =
@@ -208,7 +207,12 @@ fromResults results =
     in List.foldl (flip Result.andThen) (Ok emptyData) updates'
 
 prefix : String
-prefix = "/data/"
+prefix = "data/"
+
+calcBestTopics : Data -> Data
+calcBestTopics data =
+    let bestTopics = Dict.map (\k v -> argmax v) data.tokenTopics
+    in { data | tokenMaxLikelyTopic <- bestTopics }
 
 loadData : Task Http.Error Data
 loadData =
@@ -218,9 +222,12 @@ loadData =
             `andMap` Http.get topicTokenDec (prefix ++ "topic_tokens.json")
             `andMap` Http.get (dict trackInfoDec) (prefix ++ "doc_metadata.json")
             `andMap` Http.get (dict (list float)) (prefix ++ "vocab.json")
+            `andMap` Task.succeed Dict.empty
 
 topicData : Signal.Mailbox (Result String Data)
 topicData = Signal.mailbox (Err "Loading...")
 
 receivedData : Data -> Task x ()
-receivedData data = Signal.send topicData.address (Ok data)
+receivedData data =
+    let data' = calcBestTopics data
+    in Signal.send topicData.address (Ok data')
