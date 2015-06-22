@@ -39,6 +39,7 @@ type alias Data =
     , docMetadata : Dict String TrackInfo
     , vocab : Dict String (List Float)
     , tokenMaxLikelyTopic : Dict String Int
+    , tokenOffsets : Dict String (List Float)
     }
 
 type alias TrackInfo =

@@ -32,7 +32,16 @@ numTopics : Data -> Int
 numTopics = .topicPrevalence >> Array.length
 
 emptyData : Data
-emptyData = Data Array.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty Dict.empty
+emptyData =
+    Data
+        Array.empty
+        Dict.empty
+        Dict.empty
+        Dict.empty
+        Dict.empty
+        Dict.empty
+        Dict.empty
+        Dict.empty
 
 trackInfoDec : Decoder TrackInfo
 trackInfoDec =
@@ -223,6 +232,7 @@ loadData =
             `andMap` Http.get (dict trackInfoDec) (prefix ++ "doc_metadata.json")
             `andMap` Http.get (dict (list float)) (prefix ++ "vocab.json")
             `andMap` Task.succeed Dict.empty
+            `andMap` Http.get (dict (list float)) (prefix ++ "samples.json")
 
 topicData : Signal.Mailbox (Result String Data)
 topicData = Signal.mailbox (Err "Loading...")
