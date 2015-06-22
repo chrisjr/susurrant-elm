@@ -1,6 +1,6 @@
 module Audio where
 
-import OSC exposing (..)
+import OSC exposing (Message(..))
 import Model exposing (..)
 import Updates exposing (..)
 import TopicData exposing (topicTokens, getTokenVectors)

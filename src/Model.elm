@@ -25,6 +25,12 @@ type alias TokenDatum =
     , prob : Float
     }
 
+type alias Probable a =
+    { a | prob : Float }
+
+type alias TokenOffset =
+    { offset : Float }
+
 type alias Data =
     { topicPrevalence : Array Float
     , docTopics : Dict String (Array Float)
@@ -74,13 +80,11 @@ type Mode
 type alias State = 
     { mode : Mode
     , currentPath : String
-    , oscConnected : Bool
     , playing : Set String
     }
 
 defaultState : State
 defaultState = { mode = Overview
-               , oscConnected = False
                , currentPath = "/index.html"
                , playing = Set.empty
                }

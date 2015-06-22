@@ -1,8 +1,10 @@
 module Audio.Granular where
 
+import Audio.Probabilities exposing (..)
 import Debug
 import Html exposing (Html, text)
 import Maybe exposing (withDefault)
+import Model exposing (TokenOffset)
 import Random exposing (Seed, Generator, generate, list, pair, float)
 import Signal exposing ((<~), (~))
 import Task exposing (Task)
@@ -32,7 +34,7 @@ type alias Model = { buffer : Maybe AudioBuffer
                    , seed : Seed
                    , bufferSpread : Float
                    , triggerSpread : Float
-                   , offsets : List Float
+                   , offsets : Maybe (CDF TokenOffset)
                    , volume : Float
                    }
 
@@ -41,7 +43,7 @@ type Action
     | NewEnv Envelope
     | NewSeed Seed
     | BufferChange (Maybe AudioBuffer)
-    | PlayOffsets (List Float)
+    | PlayOffsets (Maybe (CDF TokenOffset))
 
 defaultEnvelope : Envelope
 defaultEnvelope = { attack = 0.4, release = 0.4 }
@@ -52,7 +54,7 @@ defaultModel = { buffer = Nothing
                , seed = Random.initialSeed 0
                , bufferSpread = 0.5
                , triggerSpread = 0.2
-               , offsets = []
+               , offsets = Nothing
                , volume = 0.7 }
 
 defaultGrainParams : GrainParams
@@ -140,8 +142,10 @@ untilLength n = List.take n << List.concat << List.repeat n
 
 makeRandomParams voices model = 
     let (params, seed') = generate (randomParams voices) model.seed
-        offsets = untilLength voices model.offsets
-    in (List.map2 (::) offsets params, seed')
+        (offsets, seed'') = case model.offsets of
+                    Just cdf -> generate (list voices (sampleOffsets cdf)) seed'
+                    Nothing -> ([], seed')
+    in (List.map2 (::) offsets params, seed'')
 
 triggerGrains : Int -> Model -> Task x ()
 triggerGrains voices model =
@@ -174,7 +178,7 @@ actions = Signal.mailbox NoOp
 -- Signals
 
 audioBuffer : Signal (Maybe AudioBuffer)
-audioBuffer = loadAudioBufferFromUrl DefaultContext "/elm-webaudio/examples/guitar.mp3"
+audioBuffer = loadAudioBufferFromUrl DefaultContext "/data/samples.wav"
 
 bufferLoaded : Signal (Task x ())
 bufferLoaded =
@@ -192,6 +196,8 @@ audioTasks = model
            |> Signal.sampleOn grainTrigger
            |> Signal.map doAudio
 
+playOffsets : Maybe (CDF TokenOffset) -> Task x ()
+playOffsets = Signal.send actions.address << PlayOffsets
 
 {-
 port bufferDone : Signal (Task x ())

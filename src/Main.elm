@@ -13,8 +13,8 @@ import Common exposing (..)
 import TopicData exposing (topicData, emptyData)
 import Model exposing (..)
 import Audio exposing (stopTopic)
-import OSC exposing (ExportMessage)
-import Updates exposing (actions, toPath, nowPlaying, oscMessages)
+import Audio.Granular exposing (playOffsets)
+import Updates exposing (actions, toPath, nowPlaying, activeTokenOffsets)
 import View exposing (viewOverview, viewDoc, viewTopic, viewGraph, wrap)
 import GraphData exposing (..)
 
@@ -81,8 +81,8 @@ model = Signal.map2 Model topicData.signal trackData.signal
 
 state : Signal State
 state = 
-    let f x y z = { defaultState | oscConnected <- x, currentPath <- y, playing <- z }
-    in Signal.map3 f oscConnection path nowPlaying
+    let f y z = { defaultState | currentPath <- y, playing <- z }
+    in Signal.map2 f path nowPlaying
 
 -- Main
 -- routed : Signal (RouteResult a)
@@ -108,10 +108,14 @@ port routingTasks = Signal.filterMap onlyTasks (Task.succeed ()) routed
 port runActions : Signal (Task error ())
 port runActions = actions.signal
 
-port oscConnection : Signal Bool
+port bufferDone : Signal (Task x ())
+port bufferDone = Audio.Granular.bufferLoaded
 
-port oscOut : Signal (Maybe ExportMessage)
-port oscOut = oscMessages
+port audioDone : Signal (Task x ())
+port audioDone = Audio.Granular.audioTasks
+
+port offsets : Signal (Task x ())
+port offsets = Signal.map playOffsets activeTokenOffsets
 
 port graphData : Signal (Maybe GraphData)
 port graphData = graphRetrieve.signal

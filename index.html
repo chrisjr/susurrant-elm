@@ -33,13 +33,11 @@
   <body>
     <script type="text/javascript">
       var main = Elm.fullscreen(Elm.Main, 
-        {oscConnection: false,
-         neighborhood: []
+        {
+            neighborhood: [],
         }
       );
     </script>
-    <script src="http://127.0.0.1:8081/socket.io/socket.io.js"></script>
-    <script src="osc-bridge.js"></script>
     <script src="VivaGraphJS/dist/vivagraph.min.js"></script>
     <script src="graph.js"></script>
 

@@ -100,8 +100,7 @@ navbar currentPath =
 
 wrap : State -> List Html -> Html
 wrap state xs =
-    let alerts = if (state.oscConnected)
-                 then [] else [ warning [ text "OSC not connected" ] ]
+    let alerts = []  -- warning [ text "OSC not connected" ] ]
     in container_ <| [ navbar (state.currentPath) ] ++ alerts ++ xs
 
 viewOverview : Model -> State -> List Html
