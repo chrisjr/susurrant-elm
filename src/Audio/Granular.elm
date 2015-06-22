@@ -132,7 +132,7 @@ makeParams model [baseOffset, x, y, z, w] =
     in { defaultGrainParams | bufferOffset <- bufferOffset,
                               triggerAt <- y * model.triggerSpread,
                               pan <- pan,
-                              amp <- model.volume,
+                              amp <- model.volume * defaultGrainParams.amp,
                               envelope <- model.envelope }
 
 randomParams n = list n (list 4 (float 0 1))
