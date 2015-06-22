@@ -1,6 +1,7 @@
 module Audio.Granular where
 
 import Debug
+import Html exposing (Html, text)
 import Maybe exposing (withDefault)
 import Random exposing (Seed, Generator, generate, list, pair, float)
 import Signal exposing ((<~), (~))
@@ -39,7 +40,8 @@ type Action
     = NoOp
     | NewEnv Envelope
     | NewSeed Seed
-	| BufferChange (Maybe AudioBuffer)
+    | BufferChange (Maybe AudioBuffer)
+    | PlayOffsets (List Float)
 
 defaultEnvelope : Envelope
 defaultEnvelope = { attack = 0.4, release = 0.4 }
@@ -58,7 +60,7 @@ defaultGrainParams =
     { transposition = 1.0
     , pan = NoPan
     , bufferOffset = 0.0
-    , startOffset = 0.0
+    , triggerAt = 0.0
     , amp = 0.8
     , envelope = defaultEnvelope
     }
@@ -157,9 +159,11 @@ update action model =
     case action of
       NewSeed s -> { model | seed <- s }
       NewEnv e -> { model | envelope <- e }
-	  BufferChange a -> { model | buffer <- a }
+      BufferChange a -> { model | buffer <- a }
       PlayOffsets l -> { model | offsets <- l }
       NoOp -> model
+
+view = text << toString
 
 doAudio model =
     triggerGrains 8 model
@@ -170,7 +174,7 @@ actions = Signal.mailbox NoOp
 -- Signals
 
 audioBuffer : Signal (Maybe AudioBuffer)
-audioBuffer = loadAudioBufferFromUrl DefaultContext "guitar.mp3"
+audioBuffer = loadAudioBufferFromUrl DefaultContext "/elm-webaudio/examples/guitar.mp3"
 
 bufferLoaded : Signal (Task x ())
 bufferLoaded =
@@ -187,8 +191,14 @@ audioTasks : Signal (Task x ())
 audioTasks = model
            |> Signal.sampleOn grainTrigger
            |> Signal.map doAudio
+
+
 {-
+port bufferDone : Signal (Task x ())
 port bufferDone = bufferLoaded
 
+port audioDone : Signal (Task x ())
 port audioDone = audioTasks
+
+main = view <~ model
 -}
