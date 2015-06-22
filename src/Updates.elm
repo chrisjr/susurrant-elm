@@ -2,12 +2,13 @@ module Updates where
 
 import Signal
 import Debug exposing (crash)
+import Dict exposing (Dict)
 import Set exposing (Set)
 import Task exposing (Task)
 import History exposing (setPath)
 import OSC exposing (Message(..))
 import Audio.Granular exposing (playOffsets)
-import Model exposing (Probable, TokenOffset)
+import Model exposing (Data, Probable, TokenOffset)
 import Audio.Probabilities exposing (..)
 
 actions : Signal.Mailbox (Task err ())
@@ -20,43 +21,36 @@ type SoundUpdate = Play String Message | Stop String Message | Noop
 soundUpdates : Signal.Mailbox SoundUpdate
 soundUpdates = Signal.mailbox Noop
 
-doSoundUpdate : SoundUpdate -> Set String -> Set String
-doSoundUpdate up set =
+doSoundUpdate : SoundUpdate -> Dict String Message -> Dict String Message
+doSoundUpdate up dict =
     case up of
-      Noop -> set
-      Play x _ -> Set.insert x set
-      Stop x _ -> Set.remove x set
+      Noop -> dict
+      Play x msg -> Dict.insert x msg dict
+      Stop x _ -> Dict.remove x dict
 
 
-offsetFor : String -> Float
-offsetFor _ = 0.0
+offsetFor : Data -> (String, Float) -> Maybe (Probable TokenOffset)
+offsetFor data (tokenID, prob) = Dict.get tokenID (data.tokenOffsets)
+                               |> Maybe.map (\[x, _] -> {offset=x, prob=prob})
 
-getOffsetsFrom : Message -> List (Probable TokenOffset)
-getOffsetsFrom msg =
+getOffsetsFrom : Data -> Message -> List (Probable TokenOffset)
+getOffsetsFrom data msg =
     case msg of
-      PlayTrack {track, startPos} ->
-        crash "PlayTrack not implemented"
-      SeekTrack {pos} ->
-        crash "SeekTrack not implemented"
-      StopTrack ->
-        crash "StopTrack not implemented"
       PlayTokens xs ->
-        List.map (\(a,b) -> {offset = offsetFor a, prob=b}) xs
-      StopTokens ->
-        []
+          List.filterMap (offsetFor data) xs
+      _ ->
+          []
 
-updateOffsets : SoundUpdate -> Maybe (CDF TokenOffset) -> Maybe (CDF TokenOffset)
-updateOffsets up set =
-    case up of
-      Noop -> set
-      Play _ msg -> Just <| toCDF <| getOffsetsFrom msg
-      Stop x _ -> Nothing
+getOffsetCDF : Data -> Dict String Message -> Maybe (CDF TokenOffset)
+getOffsetCDF data msgs =
+    let allOffsets = List.concatMap (getOffsetsFrom data) (Dict.values msgs)
+    in case allOffsets of
+         [] -> Nothing
+         _ -> Just (toCDF allOffsets)
 
-nowPlaying : Signal (Set String)
-nowPlaying = Signal.foldp doSoundUpdate Set.empty soundUpdates.signal
+nowPlaying : Signal (Dict String Message)
+nowPlaying = Signal.foldp doSoundUpdate Dict.empty soundUpdates.signal
 
-activeTokenOffsets : Signal (Maybe (CDF TokenOffset))
-activeTokenOffsets = Signal.foldp updateOffsets Nothing soundUpdates.signal
 
 soundUpdate : String -> Bool -> Message -> SoundUpdate
 soundUpdate soundID playing msg =

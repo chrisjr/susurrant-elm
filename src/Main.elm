@@ -14,7 +14,7 @@ import TopicData exposing (topicData, emptyData)
 import Model exposing (..)
 import Audio exposing (stopTopic)
 import Audio.Granular exposing (playOffsets)
-import Updates exposing (actions, toPath, nowPlaying, activeTokenOffsets)
+import Updates exposing (actions, toPath, nowPlaying, getOffsetCDF)
 import View exposing (viewOverview, viewDoc, viewTopic, viewGraph, wrap)
 import GraphData exposing (..)
 
@@ -81,7 +81,8 @@ model = Signal.map2 Model topicData.signal trackData.signal
 
 state : Signal State
 state = 
-    let f y z = { defaultState | currentPath <- y, playing <- z }
+    let f y z = { defaultState | currentPath <- y,
+                                 playing <- Set.fromList (Dict.keys z) }
     in Signal.map2 f path nowPlaying
 
 -- Main
@@ -115,7 +116,11 @@ port audioDone : Signal (Task x ())
 port audioDone = Audio.Granular.audioTasks
 
 port offsets : Signal (Task x ())
-port offsets = Signal.map playOffsets activeTokenOffsets
+port offsets =
+    let f {data} tokens = case data of
+                Ok data' -> playOffsets (getOffsetCDF data' tokens)
+                _ -> Task.succeed ()
+    in Signal.map2 f model nowPlaying
 
 port graphData : Signal (Maybe GraphData)
 port graphData = graphRetrieve.signal
