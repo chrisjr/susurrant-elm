@@ -47,6 +47,7 @@ import Model exposing (Model, State)
 import Common exposing (roundPct)
 import OSC exposing (Message)
 import Updates exposing (..)
+import Task exposing (Task)
 
 import TopicData exposing
     (topDocsForTopic, numTopics, topicPct, topicOrder,
@@ -188,7 +189,7 @@ viewTopicTokens : Model.Data -> Int -> List Html
 viewTopicTokens data topic =
     let tokens = topicTokens topic data
         tokenDomains = getDomain tokens
-        playPause x = [ onMouseEnter actions.address (playToken x data)
+        playPause x = [ onMouseEnter actions.address (playToken x)
                       , onMouseLeave actions.address (stopToken x)
                       ]
         f x = div ([ style [ ("display", "inline-block"), ("margin", "4px") ] ] ++ playPause x)
@@ -243,33 +244,35 @@ viewDocTopicBar state info dtype byDtypes topicDict =
                  |> Array.filter (\x -> x /= -1)
         trackTopics = { track = info, topics = mkTopics topics }
         mkTopics xs = Array.map (\x -> {x=x, y=1.0}) xs
-        playIcon' = mkPlayIcon dtype info byDtypes state
+        (action, playIcon') = mkPlayIcon dtype info byDtypes state
         isEmpty = Array.isEmpty topics
     in if (not isEmpty) then
-           div [] [ colXs_ 2 [ text dtype ]
+           div [ action ] [ colXs_ 2 [ text dtype ]
                   , colXs_ 1 [ playIcon' ]
                   , colXs_ 9 [ barDisplay [] noMargin 500 20 trackTopics ]
                   ]
            else div [] []
 
-mkPlayIcon : String -> Model.TrackInfo -> Dict String (Array Int) -> Model.State -> Html
+mkPlayIcon : String
+    -> Model.TrackInfo
+    -> Dict String (Array Int)
+    -> Model.State
+    -> (Html.Attribute, Html)
 mkPlayIcon dtype info byDtypes state =
     let soundId = info.trackID ++ "/" ++ dtype
         tokenProbs = TopicData.tokensToProbDist dtype byDtypes
-        playMsg = OSC.PlayTokens tokenProbs
-        stopMsg = OSC.StopTokens
-    in playIcon soundId playMsg stopMsg state
+        playAct = playTokens soundId tokenProbs
+        stopAct = stopTokens soundId
+    in playIcon soundId playAct stopAct state
 
-playIcon : String -> Message -> Message -> Model.State -> Html
-playIcon soundId playMsg stopMsg state =
+playIcon : String -> Task a () -> Task a () -> Model.State -> (Html.Attribute, Html)
+playIcon soundId playAct stopAct state =
     let isPlaying = soundId `Set.member` state.playing
         icon = if isPlaying then glyphiconPause_ else glyphiconPlay_
-        playAct = soundUpdate soundId True playMsg
-        stopAct = soundUpdate soundId False stopMsg
         action = if isPlaying
-                 then onClick soundUpdates.address playAct
-                 else onClick soundUpdates.address stopAct
-    in div [ action ] [ icon ]
+                 then onClick actions.address stopAct
+                 else onClick actions.address playAct
+    in (action, div [ ] [ icon ])
     
 
 viewGraph : List Html

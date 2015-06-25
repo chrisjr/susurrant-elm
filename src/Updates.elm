@@ -1,7 +1,7 @@
 module Updates where
 
 import Signal
-import Debug exposing (crash)
+import Debug exposing (log, crash)
 import Dict exposing (Dict)
 import Set exposing (Set)
 import Task exposing (Task)
@@ -50,7 +50,6 @@ getOffsetCDF data msgs =
 
 nowPlaying : Signal (Dict String Message)
 nowPlaying = Signal.foldp doSoundUpdate Dict.empty soundUpdates.signal
-
 
 soundUpdate : String -> Bool -> Message -> SoundUpdate
 soundUpdate soundID playing msg =

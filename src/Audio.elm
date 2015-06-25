@@ -20,13 +20,18 @@ stopTopic topic =
     let update = soundUpdate ("topic" ++ toString topic) False StopTokens
     in Signal.send soundUpdates.address update
 
-playToken : TokenDatum -> Data -> Task a ()
-playToken token data =
-    let tokens = [(token.id, 1.0)]
-        update = soundUpdate (token.id) True (PlayTokens tokens)
+playTokens : String -> List (String, Float) -> Task a ()
+playTokens soundID tokenProbs =
+    let update = soundUpdate soundID True (PlayTokens tokenProbs)
     in Signal.send soundUpdates.address update
 
-stopToken : TokenDatum -> Task a ()
-stopToken token = 
-    let update = soundUpdate (token.id) False StopTokens
+stopTokens : String -> Task a ()
+stopTokens soundID =
+    let update = soundUpdate soundID False StopTokens
     in Signal.send soundUpdates.address update
+
+playToken : TokenDatum -> Task a ()
+playToken token = playTokens token.id [(token.id, 1.0)]
+
+stopToken : TokenDatum -> Task a ()
+stopToken token = stopTokens token.id
