@@ -277,6 +277,41 @@ playIcon soundId playAct stopAct state =
 
 viewGraph : Model -> Model.State -> List Html
 viewGraph model state =
-    [ Viz.Graph.graphView
+    [ graphKey
+    , Viz.Graph.graphView
     , div [] [ text <| toString state.neighborhood ]
     ]
+
+pxStr : Int -> String
+pxStr px = (toString px) ++ "px"
+
+valign = ("vertical-align", "middle")
+
+swatch : String -> String -> Html
+swatch pxs hex =
+    div [ style [ ("display", "inline-block")
+                , ("margin", "0 4px")
+                , valign
+                , ("background", hex)
+                , ("width", pxs)
+                , ("height", pxs) ]
+        ] []
+
+legendLine : Int -> String -> String -> Html
+legendLine size hex label =
+    let pxs = pxStr size
+    in div [ style [ ("line-height", pxs)
+                   , ("height", pxs)
+                   , valign
+                   , ("margin-bottom", "4px")
+                   ]
+           ]
+           [ swatch pxs hex
+           , span [ style [ valign ] ] [ text label ]
+           ]
+
+graphKey : Html
+graphKey =
+    div [] [ legendLine 24 "#009EE8" "User"
+           , legendLine 24 "#FF6117" "Track" 
+           ]
