@@ -275,5 +275,8 @@ playIcon soundId playAct stopAct state =
     in (action, div [ ] [ icon ])
     
 
-viewGraph : List Html
-viewGraph = [ Viz.Graph.graphView ]
+viewGraph : Model -> Model.State -> List Html
+viewGraph model state =
+    [ Viz.Graph.graphView
+    , div [] [ text <| toString state.neighborhood ]
+    ]

@@ -2,7 +2,8 @@ var renderer;
 
 function makeGraph(data) {
     var container = document.querySelector("#graph");
-    if (data != null && container != null) {
+    var existing = document.querySelector("canvas");
+    if (data != null && container != null && !existing) {
         var graph = Viva.Graph.graph();
         for (var i = 0; i < data.nodes.length; i++) {
             graph.addNode(data.nodes[i]);

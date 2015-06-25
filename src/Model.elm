@@ -82,12 +82,14 @@ type alias State =
     { mode : Mode
     , currentPath : String
     , playing : Set String
+    , neighborhood : List Node
     }
 
 defaultState : State
 defaultState = { mode = Overview
                , currentPath = "/index.html"
                , playing = Set.empty
+               , neighborhood = []
                }
 
 noInfo : String -> TrackInfo

@@ -47,8 +47,8 @@ trackRoute path model state =
 displayOverview path model state =
     Page <| wrap state <| viewOverview model state
 
-graphRoute _ _ state =
-    ActionPage loadGraph <| wrap state <| viewGraph
+graphRoute _ model state =
+    ActionPage loadGraph <| wrap state <| viewGraph model state
 
 route = match
     [ "/index.html" :-> displayOverview
@@ -86,9 +86,11 @@ model = Signal.map2 Model topicData.signal trackData.signal
 
 state : Signal State
 state = 
-    let f y z = { defaultState | currentPath <- y,
-                                 playing <- Set.fromList (Dict.keys z) }
-    in Signal.map2 f path nowPlaying
+    let f x y z = { defaultState | currentPath <- x,
+                                 playing <- Set.fromList (Dict.keys y),
+                                 neighborhood <- z
+                  }
+    in Signal.map3 f path nowPlaying neighborhood
 
 -- Main
 -- routed : Signal (RouteResult a)
