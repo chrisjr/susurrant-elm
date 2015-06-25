@@ -211,8 +211,7 @@ viewDoc : String -> Model.Data -> Maybe Model.TrackData -> Model.State -> List H
 viewDoc doc data maybeTrack state =
     case maybeTrack of
       Just (trackId, trackData) ->
-          if trackId /= doc then [ alert [ text ("Fetched " ++ trackId ++
-                                                 "; doesn't match " ++ "doc" )] ]
+          if trackId /= doc then [ text "Loading..." ]
           else viewDocData state data (TopicData.trackInfo data trackId) trackData
       Nothing ->
           [ text "Loading..." ]
@@ -239,15 +238,15 @@ viewDocTopicBar : Model.State -> Model.TrackInfo
                               -> Dict String (Array Int)
                               -> Html
 viewDocTopicBar state info dtype byDtypes topicDict =
-    let topics = Array.slice 0 50 <| Array.filter (\x -> x /= -1)
-                                  <| withDefault (Array.empty)
-                                  <| Dict.get dtype topicDict
+    let topics = Dict.get dtype topicDict
+                 |> withDefault (Array.empty)
+                 |> Array.filter (\x -> x /= -1)
         trackTopics = { track = info, topics = mkTopics topics }
         mkTopics xs = Array.map (\x -> {x=x, y=1.0}) xs
         playIcon' = mkPlayIcon dtype info byDtypes state
     in div [] [ colXs_ 2 [ text dtype ]
               , colXs_ 1 [ playIcon' ]
-              , colXs_ 9 [ barDisplay [] noMargin 500 36 trackTopics ]
+              , colXs_ 9 [ barDisplay [] noMargin 500 20 trackTopics ]
               ]
 
 mkPlayIcon : String -> Model.TrackInfo -> Dict String (Array Int) -> Model.State -> Html

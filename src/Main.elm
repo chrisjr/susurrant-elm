@@ -41,7 +41,7 @@ trackRoute path model state =
     let trackID = String.dropLeft 1 path
         data = model.data `orElse` emptyData
         track = model.track
-    in ActionPage (loadTrack trackID) <| wrap state 
+    in ActionPage (loadTrack track trackID) <| wrap state 
            <| viewDoc trackID data track state
 
 displayOverview path model state =
@@ -67,10 +67,14 @@ trackData = Signal.mailbox Nothing
 port fetchTopicData : Task Http.Error ()
 port fetchTopicData = TopicData.loadData `Task.andThen` TopicData.receivedData
 
-loadTrack : String -> Task Http.Error ()
-loadTrack trackID =
+loadTrack : Maybe Model.TrackData -> String -> Task Http.Error ()
+loadTrack currentData trackID =
     let trackUrl = "/data/tracks/" ++ trackID ++ ".json"
-    in Http.get (TopicData.trackDataDec trackID) trackUrl `Task.andThen`
+        alreadyLoaded = case currentData of
+                          Just (currentID, _) -> currentID == trackID
+                          Nothing -> False
+    in if alreadyLoaded then (Task.succeed ()) else
+           Http.get (TopicData.trackDataDec trackID) trackUrl `Task.andThen`
            (Signal.send trackData.address << Just)
 
 loadGraph : Task Http.Error ()
