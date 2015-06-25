@@ -244,10 +244,13 @@ viewDocTopicBar state info dtype byDtypes topicDict =
         trackTopics = { track = info, topics = mkTopics topics }
         mkTopics xs = Array.map (\x -> {x=x, y=1.0}) xs
         playIcon' = mkPlayIcon dtype info byDtypes state
-    in div [] [ colXs_ 2 [ text dtype ]
-              , colXs_ 1 [ playIcon' ]
-              , colXs_ 9 [ barDisplay [] noMargin 500 20 trackTopics ]
-              ]
+        isEmpty = Array.isEmpty topics
+    in if (not isEmpty) then
+           div [] [ colXs_ 2 [ text dtype ]
+                  , colXs_ 1 [ playIcon' ]
+                  , colXs_ 9 [ barDisplay [] noMargin 500 20 trackTopics ]
+                  ]
+           else div [] []
 
 mkPlayIcon : String -> Model.TrackInfo -> Dict String (Array Int) -> Model.State -> Html
 mkPlayIcon dtype info byDtypes state =
