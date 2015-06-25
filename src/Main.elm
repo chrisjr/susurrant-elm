@@ -15,7 +15,7 @@ import Model exposing (..)
 import Audio exposing (stopTopic)
 import Audio.Granular exposing (playOffsets)
 import Updates exposing (actions, toPath, nowPlaying, getOffsetCDF)
-import View exposing (viewOverview, viewDoc, viewTopic, viewGraph, wrap)
+import View exposing (viewOverview, viewAllTopics, viewDoc, viewTopic, viewGraph, wrap)
 import GraphData exposing (..)
 
 type RouteResult a
@@ -28,7 +28,8 @@ routeToPath x = Redirect <| toPath x
 
 startPage _ _ _ = routeToPath "/index.html"
 
-topicOverviewRoute path model state = Page <| text "null"
+topicOverviewRoute path model state =
+    Page <| wrap state <| viewAllTopics model state
 
 topicRoute path model state =
     let topic = (String.toInt <| String.dropLeft 1 path) `orElse` -1

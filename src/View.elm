@@ -67,7 +67,7 @@ aLink current {name, titleText, path} =
 navLinks : List HeaderLink
 navLinks =
     [ HeaderLink "Overview" "Topics and Top Tracks" "/index.html" 
---    , HeaderLink "Topics" "All topics at once" "/topics"
+    , HeaderLink "Topics" "All topics at once" "/topics"
     , HeaderLink "Social Graph" "Tracks in social context" "/graph"
     ]
 
@@ -104,8 +104,14 @@ wrap state xs =
     in container_ <| [ navbar (state.currentPath) ] ++ alerts ++ xs
 
 viewOverview : Model -> State -> List Html
-viewOverview model state =
-    let f data = List.concatMap (viewTopicDocOverview data state) (topicOrder data)
+viewOverview = viewAllTopicsWith viewTopicDocOverview
+
+viewAllTopics : Model -> State -> List Html
+viewAllTopics = viewAllTopicsWith viewTopicOnly
+
+viewAllTopicsWith : (Model.Data -> State -> Int -> List Html) -> Model -> State -> List Html
+viewAllTopicsWith topicFunc model state =
+    let f data = List.concatMap (topicFunc data state) (topicOrder data)
         output = Result.map f (model.data)
     in case output of
          Ok x -> x
@@ -119,24 +125,28 @@ colorAttrFor i = style [ ("color", colorFor i) ]
 
 viewTopicDocOverview : Model.Data -> State -> Int -> List Html
 viewTopicDocOverview data state topic =
+    [ row_
+         (viewTopicOnly data state topic ++
+          [ colXs_ 9 (List.map showBar (topDocsForTopic topic data)) ])
+    , row_ [ hr [] [] ]
+    ]
+
+viewTopicOnly : Model.Data -> State -> Int -> List Html
+viewTopicOnly data state topic =
     let tokenDomains = getTokenDomains data
         starPlot = mediumStar (colorFor topic) [ attribute "class" "center-block" ] (Just tokenDomains) (topicTokens topic data)
-    in [ row_
-         [ div [ onClick actions.address (toPath ("/topic/" ++ toString topic))
-               , onMouseEnter actions.address (playTopic topic data)
-               , onMouseLeave actions.address (stopTopic topic)
-               , class "col-xs-3 topic-overview"
-               ] 
-           [ h2 [ colorAttrFor topic ] [ text ("Topic " ++ (toString topic) ++ " ")
-                                       , br [] []
-                                       , small [] [ (text (topicPct topic data)) ]
-                                       ] 
-           , starPlot
-           ]
-         , colXs_ 9 (List.map showBar (topDocsForTopic topic data))
-         ]
-       , row_ [ hr [] [] ]
-       ]
+    in [ div [ onClick actions.address (toPath ("/topic/" ++ toString topic))
+                  , onMouseEnter actions.address (playTopic topic data)
+                  , onMouseLeave actions.address (stopTopic topic)
+                  , class "col-xs-3 topic-overview"
+                  ] 
+              [ h2 [ colorAttrFor topic ] [ text ("Topic " ++ (toString topic) ++ " ")
+                                          , br [] []
+                                          , small [] [ (text (topicPct topic data)) ]
+                                          ] 
+              , starPlot
+              ]
+            ]
 
 trackInfoFmt : Model.TrackInfo -> Html
 trackInfoFmt inf = text <| inf.username ++ " | " ++ inf.title
