@@ -191,7 +191,7 @@ viewTopicTokens data topic =
         playPause x = [ onMouseEnter actions.address (playToken x data)
                       , onMouseLeave actions.address (stopToken x)
                       ]
-        f x = div ([ style [ ("float", "left"), ("margin", "4px") ] ] ++ playPause x)
+        f x = div ([ style [ ("display", "inline-block"), ("margin", "4px") ] ] ++ playPause x)
                     [ smallStar (colorFor topic) [] (Just tokenDomains) [x]
                     , br [] []
                     , text (x.id)

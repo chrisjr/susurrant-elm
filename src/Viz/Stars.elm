@@ -1,6 +1,6 @@
 module Viz.Stars where
 
-import Model exposing (TokenDatum, TokenType(..), Data)
+import Model exposing (TokenDatum, TokenType(..), Data, tokenTypeOf)
 import Viz.Scale exposing (FloatScale, linear, logScale, convert)
 import Viz.Common exposing (..)
 import Viz.Ordinal exposing (cat10)
@@ -52,6 +52,7 @@ star {rS, color, opacity} {id, values, prob} =
             , S.fill "none"
             , S.stroke color
             , S.strokeOpacity (convert opacity prob |> toString)
+            , S.strokeDasharray (getDasharrayFor id)
             ] []
  
 stars : Scales -> List TokenDatum -> List Svg
@@ -65,6 +66,15 @@ getTokenDomains data = extent <| List.concat <| Dict.values data.vocab
 
 defaultOpacity : FloatScale
 defaultOpacity = { logScale | domain <- [0.05, 1.0], range <- [0.0, 0.8] }
+
+getDasharrayFor : String -> String
+getDasharrayFor tokenID =
+    let ttype = tokenTypeOf tokenID
+    in case ttype of
+         Gfcc -> "none"
+         Chroma -> "5,2"
+         BeatCoef -> "1,5"
+         _ -> "none"
 
 starDisplay : String -> List Html.Attribute -> Maybe (List Float) -> Margins -> Float -> Float -> List TokenDatum -> Html.Html
 starDisplay color attrs domain margin w h data =
