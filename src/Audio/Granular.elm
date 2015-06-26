@@ -149,19 +149,15 @@ actions = Signal.mailbox NoOp
 
 -- Signals
 
-audioBuffer : Signal (Maybe AudioBuffer)
-audioBuffer = loadAudioBufferFromUrl DefaultContext "/data/samples.mp3"
-
-bufferLoaded : Signal (Task x ())
-bufferLoaded =
-    let f x = Signal.send actions.address (BufferChange x)
-    in Signal.map f audioBuffer
+audioBuffer : Task err ()
+audioBuffer = loadAudioBufferFromUrl DefaultContext "/data/samples.mp3" `Task.andThen`
+              \x -> Signal.send actions.address (BufferChange (Just x))
 
 model : Signal Model
 model = Signal.foldp update defaultModel actions.signal
 
 grainTrigger : Signal Time
-grainTrigger = every (400 * millisecond)
+grainTrigger = every (100 * millisecond)
 
 audioTasks : Signal (Task x ())
 audioTasks = model
@@ -172,9 +168,8 @@ playOffsets : Maybe (CDF TokenOffset) -> Task x ()
 playOffsets = Signal.send actions.address << PlayOffsets
 
 {-
-
-port bufferDone : Signal (Task x ())
-port bufferDone = bufferLoaded
+port bufferLoad : Task x ()
+port bufferLoad = audioBuffer
 
 port audioDone : Signal (Task x ())
 port audioDone = audioTasks

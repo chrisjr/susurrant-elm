@@ -116,8 +116,8 @@ port routingTasks = Signal.filterMap onlyTasks (Task.succeed ()) routed
 port runActions : Signal (Task error ())
 port runActions = actions.signal
 
-port bufferDone : Signal (Task x ())
-port bufferDone = Audio.Granular.bufferLoaded
+port bufferDone : Task x ()
+port bufferDone = Audio.Granular.audioBuffer
 
 port audioDone : Signal (Task x ())
 port audioDone = Audio.Granular.audioTasks
