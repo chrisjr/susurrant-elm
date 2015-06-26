@@ -4,3 +4,4 @@
 [submodule "elm-webaudio"]
 	path = elm-webaudio
 	url = https://github.com/corajr/elm-webaudio
+	branch = tasks
