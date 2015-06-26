@@ -43,7 +43,7 @@ import Audio exposing (..)
 import Set
 import Dict exposing (Dict)
 import Array exposing (Array)
-import Model exposing (Model, State)
+import Model exposing (Model, State, siteRoot)
 import Common exposing (roundPct)
 import OSC exposing (Message)
 import Updates exposing (..)
@@ -67,14 +67,14 @@ aLink current {name, titleText, path} =
 
 navLinks : List HeaderLink
 navLinks =
-    [ HeaderLink "Overview" "Topics and Top Tracks" "/index.html" 
+    [ HeaderLink "Overview" "Topics and Top Tracks" siteRoot 
     , HeaderLink "Topics" "All topics at once" "/topics"
     , HeaderLink "Social Graph" "Tracks in social context" "/graph"
     ]
 
 navbrand : Html
 navbrand =
-    Html.a [ class "navbar-brand", href "/index.html" ]
+    Html.a [ class "navbar-brand", href siteRoot ]
             [ text "Susurrant" ]
 
 navheader : Html

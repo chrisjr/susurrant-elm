@@ -26,7 +26,7 @@ type RouteResult a
 routeToPath : String -> RouteResult a
 routeToPath x = Redirect <| toPath x
 
-startPage _ _ _ = routeToPath "/index.html"
+startPage _ _ _ = routeToPath siteRoot
 
 topicOverviewRoute path model state =
     Page <| wrap state <| viewAllTopics model state
@@ -51,7 +51,7 @@ graphRoute _ model state =
     ActionPage loadGraph <| wrap state <| viewGraph model state
 
 route = match
-    [ "/index.html" :-> displayOverview
+    [ siteRoot :-> displayOverview
     , "/track" :-> trackRoute
     , "/topics" :-> topicOverviewRoute
     , "/topic" :-> topicRoute

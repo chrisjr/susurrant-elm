@@ -101,3 +101,7 @@ tokenTypeOf x =
        | startsWith "chroma" x -> Chroma
        | startsWith "beat_coef" x -> BeatCoef
        | otherwise -> Text
+
+
+-- siteRoot = "/index.html"
+siteRoot = "/demo"
