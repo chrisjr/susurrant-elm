@@ -150,7 +150,7 @@ actions = Signal.mailbox NoOp
 -- Signals
 
 audioBuffer : Task err ()
-audioBuffer = loadAudioBufferFromUrl DefaultContext "/data/samples.mp3" `Task.andThen`
+audioBuffer = loadAudioBufferFromUrl DefaultContext "data/samples.ogg" `Task.andThen`
               \x -> Signal.send actions.address (BufferChange (Just x))
 
 model : Signal Model
